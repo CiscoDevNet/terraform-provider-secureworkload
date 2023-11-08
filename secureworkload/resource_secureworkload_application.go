@@ -11,6 +11,60 @@ import (
 
 func resourceSecureWorkloadApplication() *schema.Resource {
 	return &schema.Resource{
+		Description: "Resource for creating application in Secure Workload\n" +
+			"\n" +
+			"## Example\n" +
+			"An example is shown below: \n" +
+			"```hcl\n" +
+			"resource \"secureworkload_application\" \"application1\" {\n" +
+			"	 app_scope_id = data.secureworkload_scope.scope.id\n" +
+			"    name = \"Product Service\"\n" +
+			"    description = \"Demo description for application\"\n" +
+			"    alternate_query_mode = true\n" +
+			"    strict_validation = true\n" +
+			"    primary = true \n" +
+			"    cluster {\n" +
+			"	 	 id = <ID_OF_Cluster>\n" +
+			"    	 name = <NAME_OF_Cluster>\n" +
+			"    	 description = <Cluster_Description>\n" +
+			"        node {\n" +
+			"            ip_address = \"1.2.3.4\"\n" +
+			"        	 name = \"Product Service\"\n" +
+			"        }\n" +
+			"	 }\n" +
+			"    filter {\n" +
+			"	 	 id = <ID_OF_Cluster>\n" +
+			"    	 name = <NAME_OF_Cluster>\n" +
+			"    	 query = <<EOF\n" +
+			"                {" +
+			"        		 \"type\":\"eq\",\n" +
+			"        		 \"field\": \"ip\",\n" +
+			"        		 \"value\": \"10.0.0.1\"\n" +
+			"        		 }\n" +
+			"        		 EOF\n" +
+			"	 }\n" +
+			"    absolute_policy {\n" +
+			"	 	 consumer_filter_id = <CONSUMER_FILTER_ID>\n" +
+			"    	 provider_filter_id = <PROVIDER_FILTER_ID>\n" +
+			"    	 action = \"ALLOW\"\n" +
+			"        layer_4_network_policy {\n" +
+			"            port_range = [80,80]\n" +
+			"        	 protocol = 6\n" +
+			"        }\n" +
+			"	 }\n" +
+			"    default_policy {\n" +
+			"	 	 consumer_filter_id = <CONSUMER_FILTER_ID>\n" +
+			"    	 provider_filter_id = <PROVIDER_FILTER_ID>\n" +
+			"    	 action = \"DENY\"\n" +
+			"        layer_4_network_policy {\n" +
+			"            port_range = [80,80]\n" +
+			"        	 protocol = 6\n" +
+			"        }\n" +
+			"	 }\n" +
+			"    catch all action  = false \n" +
+			"}\n" +
+			"```\n" +
+			"**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.\n" ,
 		Create:        resourceSecureWorkloadApplicationCreate,
 		Read:          resourceSecureWorkloadApplicationRead,
 		Delete:        resourceSecureWorkloadApplicationDelete,

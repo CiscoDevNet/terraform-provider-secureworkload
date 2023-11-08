@@ -9,6 +9,26 @@ import (
 
 func resourceSecureWorkloadFilter() *schema.Resource {
 	return &schema.Resource{
+		Description: "Resource for creating a new filter in Secure Workload\n" +
+			"\n" +
+			"## Example\n" +
+			"An example is shown below: \n" +
+			"```hcl\n" +
+			"resource \"secureworkload_filter\" \"filter1\" {\n" +
+			"	 app_scope_id = data.secureworkload_scope.scope.id\n" +
+			"    name = \"New-Filter\"\n" +
+			"    query = <<EOF\n" +
+			"                {" +
+			"        		 \"type\":\"eq\",\n" +
+			"        		 \"field\": \"ip\",\n" +
+			"        		 \"value\": \"10.0.0.1\"\n" +
+			"        		 }\n" +
+			"        	EOF\n" +	
+			"    primary = true \n" +
+			"    public = false \n" +
+			"}\n" +
+			"```\n" +
+			"**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.\n" ,
 		Create: resourceSecureWorkloadFilterCreate,
 		Update: nil,
 		Read:   resourceSecureWorkloadFilterRead,

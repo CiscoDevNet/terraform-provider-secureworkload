@@ -9,6 +9,13 @@ import (
 
 func dataSourceSecureWorkloadScope() *schema.Resource {
 	return &schema.Resource{
+		Description: "Data source for fetching scopes from secure-workload\n\n" +
+			"An example is shown below: \n" +
+			"```hcl\n" +
+			"data \"secureworkload_scope\" \"scope\" {\n" +
+			"	exact_name = \"RootScope:ChildScope\"\n" +
+			"}\n" +
+			"```",
 		ReadContext: dataSourceSecureWorkloadScopeRead,
 		Schema: map[string]*schema.Schema{
 			"id": {
