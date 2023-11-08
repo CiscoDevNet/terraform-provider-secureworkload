@@ -200,12 +200,7 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 						"consumer_filter_name": {
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "Named filter. If more than one filter with the same name exists you must specify consumer_filter_id. Only one of consumer_filter_id, consumer_filter_name or consumer_scope_name can be specified.",
-						},
-						"consumer_scope_name": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "Named application scope. If more than one application scope with the same name exists you must specify consumer_filter_id. Only one of consumer_filter_id, consumer_filter_name or consumer_scope_name can be specified.",
+							Description: "Named filter. If more than one filter with the same name exists you must specify consumer_filter_id. ",
 						},
 						"provider_filter_id": {
 							Type:        schema.TypeString,
@@ -215,12 +210,7 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 						"provider_filter_name": {
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "Named filter. If more than one filter with the same name exists you must specify consumer_filter_id. Only one of consumer_filter_id, consumer_filter_name or consumer_scope_name can be specified.",
-						},
-						"provider_scope_name": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "Named application scope. If more than one application scope with the same name exists you must specify consumer_filter_id. Only one of consumer_filter_id, consumer_filter_name or consumer_scope_name can be specified.",
+							Description: "Named filter. If more than one filter with the same name exists you must specify consumer_filter_id. ",
 						},
 						"action": {
 							Type:        schema.TypeString,
@@ -241,11 +231,12 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 									"port_range": {
 										Type:        schema.TypeList,
 										Required:    true,
+										MinItems: 2,
+										MaxItems: 2,
 										Description: "Inclusive range of ports; for example, [80, 80] or [5000, 6000].",
 										Elem: &schema.Schema{
 											Type:     schema.TypeInt,
-											MinItems: 2,
-											MaxItems: 2,
+								
 										},
 									},
 									"approved": {
@@ -275,12 +266,7 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 						"consumer_filter_name": {
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "Named filter. If more than one filter with the same name exists you must specify consumer_filter_id. Only one of consumer_filter_id, consumer_filter_name or consumer_scope_name can be specified.",
-						},
-						"consumer_scope_name": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "Named application scope. If more than one application scope with the same name exists you must specify consumer_filter_id. Only one of consumer_filter_id, consumer_filter_name or consumer_scope_name can be specified.",
+							Description: "Named filter. If more than one filter with the same name exists you must specify consumer_filter_id.",
 						},
 						"provider_filter_id": {
 							Type:        schema.TypeString,
@@ -290,12 +276,7 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 						"provider_filter_name": {
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "Named filter. If more than one filter with the same name exists you must specify consumer_filter_id. Only one of consumer_filter_id, consumer_filter_name or consumer_scope_name can be specified.",
-						},
-						"provider_scope_name": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "Named application scope. If more than one application scope with the same name exists you must specify consumer_filter_id. Only one of consumer_filter_id, consumer_filter_name or consumer_scope_name can be specified.",
+							Description: "Named filter. If more than one filter with the same name exists you must specify consumer_filter_id.",
 						},
 						"action": {
 							Type:        schema.TypeString,
@@ -317,11 +298,12 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 									"port_range": {
 										Type:        schema.TypeList,
 										Required:    true,
+										MinItems: 2,
+										MaxItems: 2,
 										Description: "Inclusive range of ports; for example, [80, 80] or [5000, 6000].",
 										Elem: &schema.Schema{
 											Type:     schema.TypeInt,
-											MinItems: 2,
-											MaxItems: 2,
+											
 										},
 									},
 									"approved": {
@@ -568,7 +550,6 @@ func policyFromTerraform(apiClient Client, tf terraformObject) (Policy, error) {
 	consumingPolicyFilterQuery := policyFilterQuery{
 		AbsoluteId: tf["consumer_filter_id"].(string),
 		FilterName: tf["consumer_filter_name"].(string),
-		ScopeName:  tf["consumer_scope_name"].(string),
 	}
 	filterId, err := policyFilterIdForQuery(apiClient, consumingPolicyFilterQuery)
 	if err != nil {
@@ -578,7 +559,6 @@ func policyFromTerraform(apiClient Client, tf terraformObject) (Policy, error) {
 	providingPolicyFilterQuery := policyFilterQuery{
 		AbsoluteId: tf["provider_filter_id"].(string),
 		FilterName: tf["provider_filter_name"].(string),
-		ScopeName:  tf["provider_scope_name"].(string),
 	}
 	filterId, err = policyFilterIdForQuery(apiClient, providingPolicyFilterQuery)
 	if err != nil {
