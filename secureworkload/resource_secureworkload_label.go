@@ -15,6 +15,22 @@ const (
 
 func resourceSecureWorkloadLabel() *schema.Resource {
 	return &schema.Resource{
+		Description: "Resource for creating a new label in Secure Workload\n" +
+			"\n" +
+			"## Example\n" +
+			"An example is shown below: \n" +
+			"```hcl\n" +
+			"resource \"secureworkload_label\" \"label-1\" {\n" +
+			"	 ip = \"1.2.3.4\"\n" +
+			"    tenant_name = \"tenant1\"\n" +
+			"    attributes = {\n" +
+			"        Environment = \"test\"\n" +
+			"        Datacenter = \"aws\"\n" +
+			"        app_name = \"app_name\"\n" +
+			"    }\n" +	
+			"}\n" +
+			"```\n" +
+			"**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.\n" ,
 		Create: resourceSecureWorkloadTagCreate,
 		Update: resourceSecureWorkloadTagCreate,
 		Read:   resourceSecureWorkloadTagRead,

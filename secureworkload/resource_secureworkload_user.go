@@ -8,6 +8,22 @@ import (
 
 func resourceSecureWorkloadUser() *schema.Resource {
 	return &schema.Resource{
+		Description: "Resource for creating a user in Secure Workload\n" +
+			"\n" +
+			"## Example\n" +
+			"An example is shown below: \n" +
+			"```hcl\n" +
+			"resource \"secureworkload_user\" \"new_user\" {\n" +
+			"    email = \"test@domain.com\"\n" +
+			"    first_name = \"test\"\n" +
+			"    last_name = \"user\"\n" +
+			"	 app_scope_id = data.secureworkload_scope.scope.id\n" +
+			"    role_ids = [\"<ROLE_IDS>\"]\n" +
+			"    enable_existing = true \n" +
+			"}\n" +
+			"```\n" +
+			"**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.\n" ,
+
 		Create: resourceSecureWorkloadUserCreate,
 		Update: nil,
 		Read:   resourceSecureWorkloadUserRead,
