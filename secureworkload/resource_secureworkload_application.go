@@ -94,14 +94,12 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				ForceNew:    true,
-				Default:     true,
 				Description: "(Optional) Indicates if “dynamic mode” is used for the application. In dynamic mode, an ADM run creates one or more candidate queries for each cluster. Default value is true.",
 			},
 			"strict_validation": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				ForceNew:    true,
-				Default:     false,
 				Description: "(Optional) Return an error if there are unknown keys/attributes in the uploaded data. Useful for catching misspelled keys. Default value is false.",
 			},
 			"primary": {
@@ -356,14 +354,15 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 func resourceSecureWorkloadApplicationCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(Client)
 	isPrimaryApplication := d.Get("primary").(bool)
+	tempAppScopeId := d.Get("app_scope_id").(string)
 	if isPrimaryApplication {
-		existingApplications, err := client.ListApplications()
+		existingApplications, err := client.ListApplications(tempAppScopeId)
 		if err != nil {
 			return err
 		}
 		for _, existingApplication := range existingApplications {
 			if existingApplication.Primary {
-				return errors.New(fmt.Sprintf("Existing application %s exists for scope %s that is marked as primary. Please demote the workspace to secondary before continuing.", existingApplication.Name, existingApplication.AppScopeId))
+				return errors.New(fmt.Sprintf("Existing application '' %s '' exists for scope '' %s '' that is marked as primary. Please demote the workspace to secondary before continuing.", existingApplication.Name, existingApplication.AppScopeId))
 			}
 		}
 	}
