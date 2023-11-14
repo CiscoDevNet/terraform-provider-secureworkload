@@ -318,7 +318,8 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 			},
 			"catch_all_action": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Default:     "DENY",
 				ForceNew:    true,
 				Description: "“ALLOW” or “DENY”",
 			},
