@@ -11,15 +11,15 @@ import (
 
 func resourceSecureWorkloadApplication() *schema.Resource {
 	return &schema.Resource{
-		Description: "Resource for creating application in Secure Workload\n" +
+		Description: "Resource for creating a workspace in Secure Workload\n" +
 			"\n" +
 			"## Example\n" +
 			"An example is shown below: \n" +
 			"```hcl\n" +
-			"resource \"secureworkload_application\" \"application1\" {\n" +
+			"resource \"secureworkload_workspace\" \"workspace1\" {\n" +
 			"	 app_scope_id = data.secureworkload_scope.scope.id\n" +
 			"    name = \"Product Service\"\n" +
-			"    description = \"Demo description for application\"\n" +
+			"    description = \"Demo description for workspace\"\n" +
 			"    alternate_query_mode = true\n" +
 			"    strict_validation = true\n" +
 			"    primary = true \n" +
