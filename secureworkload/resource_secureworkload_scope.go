@@ -8,7 +8,7 @@ import (
 	// client "github.com/secureworkload-exchange/terraform-go-sdk"
 	// secureworkload "github.com/secureworkload-exchange/terraform-go-sdk"
 )
-
+var timer int
 func resourceSecureWorkloadScope() *schema.Resource {
 	return &schema.Resource{
 		Description: "Resource for creating a scope in Secure Workload\n" +
@@ -213,7 +213,11 @@ func resourceSecureWorkloadScopeDelete(d *schema.ResourceData, meta interface{})
 	err :=  client.DeleteScope(d.Id())
 	for(err != nil){
 		if(strings.Contains(err.Error(), "error:cannot delete scope because it is in use")){
+			if(timer >= 20 ){
+				return err
+			}
 			time.Sleep(60 * time.Second)
+			timer = timer+1
 			err = client.DeleteScope(d.Id())
 		}else {
 			return err
