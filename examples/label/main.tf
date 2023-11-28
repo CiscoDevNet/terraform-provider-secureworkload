@@ -6,7 +6,7 @@ provider "secureworkload" {
 }
 
 resource "secureworkload_label" "tag" {
-  tenant_name = "acme"
+  root_scope_name = "acme"
   ip          = "10.0.0.1"
   attributes = {
     Environment = "test"

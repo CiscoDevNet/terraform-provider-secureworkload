@@ -9,7 +9,7 @@ description: |-
   hcl
   resource "secureworkload_label" "label-1" {
        ip = "1.2.3.4"
-      tenant_name = "tenant1"
+      root_scope_name = "scope_name"
       attributes = {
           Environment = "test"
           Datacenter = "aws"
@@ -29,7 +29,7 @@ An example is shown below:
 ```hcl
 resource "secureworkload_label" "label-1" {
 	 ip = "1.2.3.4"
-    tenant_name = "tenant1"
+    root_scope_name = "scope_name"
     attributes = {
         Environment = "test"
         Datacenter = "aws"
@@ -51,7 +51,7 @@ resource "secureworkload_label" "label-1" {
 ### Optional
 
 - `attributes` (Map of String) Key/value map for tagging matching flows and inventory items.
-- `tenant_name` (String) SecureWorkload root app scope name.
+- `root_scope_name` (String) SecureWorkload root app scope name.
 
 ### Read-Only
 
