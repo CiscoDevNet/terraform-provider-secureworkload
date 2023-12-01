@@ -122,7 +122,16 @@ type Layer4NetworkPolicy struct {
 	// (Optional) Indicates whether the policy is approved. Default is false.
 	Approved bool `json:"approved"`
 }
-
+func (c Client) GetApplicationByParam(getUrl string) ([]Application, error) {
+	var scope []Application
+	url := c.Config.APIURL + ApplicationsAPIV1BasePath + getUrl
+	request, err := signer.CreateJSONRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return scope, err
+	}
+	err = c.Do(request, &scope)
+	return scope, err
+}
 // CreateApplication creates a application with
 // the specified params, returning the created application and error (if any).
 func (c Client) CreateApplication(params CreateApplicationRequest) (Application, error) {
