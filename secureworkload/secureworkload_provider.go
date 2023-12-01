@@ -49,6 +49,7 @@ func Provider() *schema.Provider {
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"secureworkload_scope":       dataSourceSecureWorkloadScope(),
+			"secureworkload_workspace": dataSourceSecureWorkloadApplication(),
 		},
 		ConfigureFunc: configureClient,
 	}

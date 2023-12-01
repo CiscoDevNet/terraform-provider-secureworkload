@@ -96,3 +96,11 @@ resource "secureworkload_workspace" "socially_distant_workspace" {
   }
   catch_all_action = "DENY"
 }
+
+# To be only used get workspace related detail
+data "secureworkload_workspace" "workspace" {
+  name = "MyWorkspace"
+}
+output "workspace" {
+  value = data.secureworkload_workspace.workspace
+}
