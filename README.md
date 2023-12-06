@@ -27,13 +27,23 @@ provider "secureworkload" {
   disable_tls_verification = false
 }
 
-resource "secureworkload_filter" "filter" {
-  name            = "Terraform created filter"
-  query_type      = "eq"
-  query_field     = "ip"
-  query_value     = "10.0.0.1"
-  app_scope_id = "5ceea87b497d4f753baf85bc"
+data "secureworkload_scope" "scope" {
+  exact_name = "RootScope:ChildScope"
 }
+resource "secureworkload_filter" "filter" {
+  name         = "Terraform created filter"
+  query        = <<EOF
+                    {
+                      "type": "eq",
+                      "field": "ip",
+                      "value": "10.0.0.1"
+                    }
+          EOF
+  app_scope_id = data.secureworkload_scope.scope.id
+  primary      = true
+  public       = false
+}
+
 ```
 
 ### Building and Consuming
@@ -68,12 +78,21 @@ provider "secureworkload" {
   disable_tls_verification = false
 }
 
+data "secureworkload_scope" "scope" {
+  exact_name = "RootScope:ChildScope"
+}
 resource "secureworkload_filter" "filter" {
-  name            = "Terraform created filter"
-  query_type      = "eq"
-  query_field     = "ip"
-  query_value     = "10.0.0.1"
-  app_scope_id = "5ceea87b497d4f753baf85bc"
+  name         = "Terraform created filter"
+  query        = <<EOF
+                    {
+                      "type": "eq",
+                      "field": "ip",
+                      "value": "10.0.0.1"
+                    }
+          EOF
+  app_scope_id = data.secureworkload_scope.scope.id
+  primary      = true
+  public       = false
 }
 ```
 

@@ -11,15 +11,15 @@ import (
 
 func resourceSecureWorkloadApplication() *schema.Resource {
 	return &schema.Resource{
-		Description: "Resource for creating application in Secure Workload\n" +
+		Description: "Resource for creating a workspace in Secure Workload\n" +
 			"\n" +
 			"## Example\n" +
 			"An example is shown below: \n" +
 			"```hcl\n" +
-			"resource \"secureworkload_application\" \"application1\" {\n" +
+			"resource \"secureworkload_workspace\" \"workspace1\" {\n" +
 			"	 app_scope_id = data.secureworkload_scope.scope.id\n" +
 			"    name = \"Product Service\"\n" +
-			"    description = \"Demo description for application\"\n" +
+			"    description = \"Demo description for workspace\"\n" +
 			"    alternate_query_mode = true\n" +
 			"    strict_validation = true\n" +
 			"    primary = true \n" +
@@ -94,14 +94,12 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				ForceNew:    true,
-				Default:     true,
 				Description: "(Optional) Indicates if “dynamic mode” is used for the application. In dynamic mode, an ADM run creates one or more candidate queries for each cluster. Default value is true.",
 			},
 			"strict_validation": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				ForceNew:    true,
-				Default:     false,
 				Description: "(Optional) Return an error if there are unknown keys/attributes in the uploaded data. Useful for catching misspelled keys. Default value is false.",
 			},
 			"primary": {
@@ -320,7 +318,8 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 			},
 			"catch_all_action": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Default:     "DENY",
 				ForceNew:    true,
 				Description: "“ALLOW” or “DENY”",
 			},
@@ -356,14 +355,15 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 func resourceSecureWorkloadApplicationCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(Client)
 	isPrimaryApplication := d.Get("primary").(bool)
+	tempAppScopeId := d.Get("app_scope_id").(string)
 	if isPrimaryApplication {
-		existingApplications, err := client.ListApplications()
+		existingApplications, err := client.ListApplications(tempAppScopeId)
 		if err != nil {
 			return err
 		}
 		for _, existingApplication := range existingApplications {
 			if existingApplication.Primary {
-				return errors.New(fmt.Sprintf("Existing application %s exists for scope %s that is marked as primary. Please demote the workspace to secondary before continuing.", existingApplication.Name, existingApplication.AppScopeId))
+				return errors.New(fmt.Sprintf("Existing application '' %s '' exists for scope '' %s '' that is marked as primary. Please demote the workspace to secondary before continuing.", existingApplication.Name, existingApplication.AppScopeId))
 			}
 		}
 	}

@@ -5,10 +5,10 @@ provider "secureworkload" {
   disable_tls_verification = false
 }
 
-resource "secureworkload_application" "socially_distant_application" {
+resource "secureworkload_workspace" "socially_distant_workspace" {
   app_scope_id         = "5ed6890c497d4f55eb5c585c"
   name                 = "Product Service"
-  description          = "A socially distant application"
+  description          = "A socially distant workspace"
   alternate_query_mode = true
   strict_validation    = true
   primary              = true
@@ -95,4 +95,12 @@ resource "secureworkload_application" "socially_distant_application" {
     }
   }
   catch_all_action = "DENY"
+}
+
+# To be only used get workspace related detail
+data "secureworkload_workspace" "workspace" {
+  name = "MyWorkspace"
+}
+output "workspace" {
+  value = data.secureworkload_workspace.workspace
 }

@@ -12,5 +12,5 @@ resource "secureworkload_scope" "scope" {
   short_query_type    = "eq"
   short_query_field   = "ip"
   short_query_value   = "10.0.0.1"
-  parent_app_scope_id = "5ceea87b497d4f753baf85bc"
+  parent_app_scope_id = data.secureworkload_scope.scope.id
 }

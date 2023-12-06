@@ -22,7 +22,7 @@ func resourceSecureWorkloadLabel() *schema.Resource {
 			"```hcl\n" +
 			"resource \"secureworkload_label\" \"label-1\" {\n" +
 			"	 ip = \"1.2.3.4\"\n" +
-			"    tenant_name = \"tenant1\"\n" +
+			"    root_scope_name = \"scope_name\"\n" +
 			"    attributes = {\n" +
 			"        Environment = \"test\"\n" +
 			"        Datacenter = \"aws\"\n" +
@@ -39,7 +39,7 @@ func resourceSecureWorkloadLabel() *schema.Resource {
 		SchemaVersion: 1,
 
 		Schema: map[string]*schema.Schema{
-			"tenant_name": {
+			"root_scope_name": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "",
@@ -75,7 +75,7 @@ func resourceSecureWorkloadTagCreate(d *schema.ResourceData, meta interface{}) e
 			return fmt.Errorf("%s is required but was not provided", param)
 		}
 	}
-	tenantName := d.Get("tenant_name").(string)
+	tenantName := d.Get("root_scope_name").(string)
 	if tenantName == "" {
 		tenantURL := client.Config.APIURL
 		// strip protocol and extract the tenant name/subdomain from the url
@@ -108,7 +108,7 @@ func resourceSecureWorkloadTagRead(d *schema.ResourceData, meta interface{}) err
 	if err != nil {
 		return err
 	}
-	d.Set("tenant_name", describeTagRequest.RootAppScopeName)
+	d.Set("root_scope_name", describeTagRequest.RootAppScopeName)
 	d.Set("ip", describeTagRequest.Ip)
 	d.Set("attributes", attributes)
 	return nil

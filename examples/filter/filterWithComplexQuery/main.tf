@@ -4,7 +4,9 @@ provider "secureworkload" {
   api_url                  = "https://acme.secureworkloadpreview.com"
   disable_tls_verification = false
 }
-
+data "secureworkload_scope" "scope" {
+  exact_name = "RootScope:ChildScope"
+}
 resource "secureworkload_filter" "filter" {
   name         = "Terraform created filter"
   query        = <<EOF
@@ -39,7 +41,7 @@ resource "secureworkload_filter" "filter" {
                ]
             }
           EOF
-  app_scope_id = "5ed6890c497d4f55eb5c585c"
+  app_scope_id = data.secureworkload_scope.scope.id
   primary      = true
   public       = false
 }

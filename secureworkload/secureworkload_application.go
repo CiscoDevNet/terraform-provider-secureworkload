@@ -122,7 +122,16 @@ type Layer4NetworkPolicy struct {
 	// (Optional) Indicates whether the policy is approved. Default is false.
 	Approved bool `json:"approved"`
 }
-
+func (c Client) GetApplicationByParam(getUrl string) ([]Application, error) {
+	var scope []Application
+	url := c.Config.APIURL + ApplicationsAPIV1BasePath + getUrl
+	request, err := signer.CreateJSONRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return scope, err
+	}
+	err = c.Do(request, &scope)
+	return scope, err
+}
 // CreateApplication creates a application with
 // the specified params, returning the created application and error (if any).
 func (c Client) CreateApplication(params CreateApplicationRequest) (Application, error) {
@@ -173,13 +182,19 @@ func (c Client) DeleteApplication(applicationId string) error {
 // ListApplications lists all applications readable by the API
 // credentials for the given client, returning
 // the listed applications and error (if any)
-func (c Client) ListApplications() ([]Application, error) {
+func (c Client) ListApplications(app_scope_id string) ([]Application, error) {
 	var applications []Application
-	url := c.Config.APIURL + ApplicationsAPIV1BasePath
+	appendUrl := "?app_scope_id=" + app_scope_id
+	url := c.Config.APIURL + ApplicationsAPIV1BasePath + appendUrl
 	request, err := signer.CreateJSONRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return applications, err
 	}
 	err = c.Do(request, &applications)
-	return applications, err
+	for _, application := range applications {
+		if application.Primary {
+			return applications, err
+		}
+	}
+	return nil , err
 }
