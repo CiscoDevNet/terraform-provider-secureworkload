@@ -38,6 +38,17 @@ type Role struct {
 	Description string `json:"description"`
 }
 
+func (c Client) GetRoleByParam(getUrl string) ([]Role, error) {
+	var role []Role
+	url := c.Config.APIURL + RolesAPIV1BasePath + getUrl
+	request, err := signer.CreateJSONRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return role, err
+	}
+	err = c.Do(request, &role)
+	return role, err
+}
+
 // ListRoles lists all roles readable by the API
 // credentials for the given client, returning
 // the listed roles and error (if any)
