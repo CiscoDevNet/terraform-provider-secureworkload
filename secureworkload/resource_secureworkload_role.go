@@ -27,7 +27,6 @@ func resourceSecureWorkloadRole() *schema.Resource {
 			"	 access_app_scope_id = data.secureworkload_scope2.scope2.id\n" +
 			"    name = \"read_role\"\n" +
 			"    access_type = \"scope_read\"\n" +
-			"    user_ids = [\"<USER_IDS>\"]\n" +
 			"    description = \"Demo description for role\"\n" +
 			"}\n" +
 			"```\n" +

@@ -12,7 +12,6 @@ description: |-
        access_app_scope_id = data.secureworkload_scope2.scope2.id
       name = "read_role"
       access_type = "scope_read"
-      user_ids = ["<USER_IDS>"]
       description = "Demo description for role"
   }
   
@@ -31,7 +30,6 @@ resource "secureworkload_role" "role1" {
 	 access_app_scope_id = data.secureworkload_scope2.scope2.id
     name = "read_role"
     access_type = "scope_read"
-    user_ids = ["<USER_IDS>"]
     description = "Demo description for role"
 }
 ```
