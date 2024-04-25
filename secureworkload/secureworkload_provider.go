@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	// "github.com/hashicorp/terraform/terraform"
-
 	// client "github.com/secureworkload-exchange/terraform-go-sdk"
 )
 
@@ -40,17 +39,20 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"secureworkload_filter":      resourceSecureWorkloadFilter(),
-			"secureworkload_scope":       resourceSecureWorkloadScope(),
-			"secureworkload_label":       resourceSecureWorkloadLabel(),
-			"secureworkload_user":        resourceSecureWorkloadUser(),
-			"secureworkload_workspace":   resourceSecureWorkloadApplication(),
-			"secureworkload_role":        resourceSecureWorkloadRole(),
+			"secureworkload_filter":    resourceSecureWorkloadFilter(),
+			"secureworkload_scope":     resourceSecureWorkloadScope(),
+			"secureworkload_label":     resourceSecureWorkloadLabel(),
+			"secureworkload_user":      resourceSecureWorkloadUser(),
+			"secureworkload_workspace": resourceSecureWorkloadApplication(),
+			"secureworkload_role":      resourceSecureWorkloadRole(),
+			"secureworkload_cluster":   resourceSecureWorkloadCluster(),
+			"secureworkload_policies":  resourceSecureWorkloadPolicy(),
+			"secureworkload_port":      resourceSecureWorkloadPort(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"secureworkload_scope":       dataSourceSecureWorkloadScope(),
-			"secureworkload_workspace":   dataSourceSecureWorkloadApplication(),
-			"secureworkload_role":   	  dataSourceSecureWorkloadRole(),
+			"secureworkload_scope":     dataSourceSecureWorkloadScope(),
+			"secureworkload_workspace": dataSourceSecureWorkloadApplication(),
+			"secureworkload_role":      dataSourceSecureWorkloadRole(),
 		},
 		ConfigureFunc: configureClient,
 	}
@@ -66,7 +68,7 @@ func configureClient(d *schema.ResourceData) (interface{}, error) {
 	if err := validate(config); err != nil {
 		return nil, err
 	}
-	client, err :=New(config)
+	client, err := New(config)
 	if err != nil {
 		return nil, err
 	}
