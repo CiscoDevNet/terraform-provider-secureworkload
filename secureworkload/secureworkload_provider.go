@@ -48,6 +48,7 @@ func Provider() *schema.Provider {
 			"secureworkload_cluster":   resourceSecureWorkloadCluster(),
 			"secureworkload_policies":  resourceSecureWorkloadPolicy(),
 			"secureworkload_port":      resourceSecureWorkloadPort(),
+			"secureworkload_enforce":   resourceSecureWorkloadEnforce(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"secureworkload_scope":     dataSourceSecureWorkloadScope(),
