@@ -45,12 +45,12 @@ provider "secureworkload" {
 
 ### Required
 
-- **api_key** (String) API key for calculating request signatures for SecureWorkload API calls.
-- **api_secret** (String) API secret for calculating request signatures for SecureWorkload API calls.
-- **api_url** (String) URL for a SecureWorkload API.
+- **api_key** (String) API key for calculating request signatures for SecureWorkload API calls. Can be set via the `SECUREWORKLOAD_API_KEY` environment variable.
+- **api_secret** (String) API secret for calculating request signatures for SecureWorkload API calls. Can be set via the `SECUREWORKLOAD_API_SECRET` environment variable.
+- **api_url** (String) URL for a SecureWorkload API. Can be set via the `SECUREWORKLOAD_API_URL` environment variable.
 
 ### Optional
 
-- **disable_tls_verification** (Boolean) Allow connections to SecureWorkload endpoints without validating their TLS certificate.
-## Tutorials
+- **disable_tls_verification** (Boolean) Allow connections to SecureWorkload endpoints without validating their TLS certificate. Can be set via the `SECUREWORKLOAD_DISABLE_TLS_VERIFICATION` environment variable.
 
+## Tutorials
