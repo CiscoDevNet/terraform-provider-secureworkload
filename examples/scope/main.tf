@@ -9,8 +9,34 @@ data "secureworkload_scope" "scope" {
 }
 resource "secureworkload_scope" "scope" {
   short_name          = "Terraform created scope"
-  short_query_type    = "eq"
-  short_query_field   = "ip"
-  short_query_value   = "10.0.0.1"
+  short_query = <<EOF
+  {
+    "type": "or",
+    "filters": [
+      {
+        "type": "and",
+        "filters": [
+          {
+            "type": "contains",
+            "field": "user_orchestrator_system/name",
+            "value": "Random"
+          },
+          {
+            "type": "eq",
+            "field": "ip",
+            "value": "10.0.1.1"
+          }
+        ]
+      },
+      {
+        "type": "gt",
+        "field": "host_tags_cvss3",
+        "value": 2
+      }
+    ]
+  }
+  EOF
+  sub_type = "DNS_SERVERS"
   parent_app_scope_id = data.secureworkload_scope.scope.id
 }
+

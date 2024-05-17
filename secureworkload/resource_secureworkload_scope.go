@@ -2,13 +2,16 @@ package secureworkload
 
 import (
 	"fmt"
-	"time"
 	"strings"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	// client "github.com/secureworkload-exchange/terraform-go-sdk"
 	// secureworkload "github.com/secureworkload-exchange/terraform-go-sdk"
 )
+
 var timer int
+
 func resourceSecureWorkloadScope() *schema.Resource {
 	return &schema.Resource{
 		Description: "Resource for creating a scope in Secure Workload\n" +
@@ -17,14 +20,54 @@ func resourceSecureWorkloadScope() *schema.Resource {
 			"An example is shown below: \n" +
 			"```hcl\n" +
 			"resource \"secureworkload_scope\" \"scope\" {\n" +
-			"    short_name = \"Terraform created scope\"\n" +
-			"    short_query_type = \"eq\"\n" +
-			"    short_query_field = \"ip\"\n" +
-			"	 short_query_value = \"1.2.3.4 \"\n"+
+			"    short_name = \"Terraform-created-scope\"\n" +
+			"    sub_type = \"DNS_SERVERS\"\n" +
+			"    short_query = file(\"${path.module}/query_file.json\") \n" +
+			"	 parent_app_scope_id = data.secureworkload_scope.scope.id\n" +
+			"}\n" +
+			"\n" +
+			"resource \"secureworkload_scope\" \"scope2\" {\n" +
+			"    short_name = \"Terraform-created-scope2\"\n" +
+			"    query = <<EOF\n" +
+			"                { \n" +
+			"        		 \"type\":\"eq\",\n" +
+			"        		 \"field\": \"ip\",\n" +
+			"        		 \"value\": \"10.0.0.1\"\n" +
+			"        		 }\n" +
+			"        	EOF\n" +
+			"    sub_type = \"GENERIC\"\n" +
 			"	 parent_app_scope_id = data.secureworkload_scope.scope.id\n" +
 			"}\n" +
 			"```\n" +
-			"**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.\n" ,
+			"Example of **query_file.json**\n" +
+			"```json\n" +
+			"{	\n" +
+			"	\"type\": \"or\",\n" +
+			"	\"filters\": [ \n" +
+			"	  {\n" +
+			"	\"type\": \"and\",\n" +
+			"		\"filters\": [ \n" +
+			"		  { \n" +
+			"			\"type\": \"contains\",\n" +
+			"			\"field\": \"user_orchestrator_system/name\",\n" +
+			"			\"value\": \"Random\"\n" +
+			"		  },\n" +
+			"		  {\n" +
+			"			\"type\": \"eq\",\n" +
+			"			\"field\": \"ip\",\n" +
+			"			\"value\": \"10.0.1.1\"\n" +
+			"		  }\n" +
+			"		]\n" +
+			"	  },\n" +
+			"	  {\n" +
+			"		\"type\": \"gt\",\n" +
+			"		\"field\": \"host_tags_cvss\",\n" +
+			"		\"value\": 2\n" +
+			"	  }\n" +
+			"	]\n" +
+			"  }\n" +
+			"```\n" +
+			"**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.\n",
 		Create: resourceSecureWorkloadScopeCreate,
 		Update: resourceSecureWorkloadScopeUpdate,
 		Read:   resourceSecureWorkloadScopeRead,
@@ -38,6 +81,12 @@ func resourceSecureWorkloadScope() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 				Description: "User-specified name for the scope.",
+			},
+			"sub_type": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "User-specified sub type for the scope.",
 			},
 			"description": {
 				Type:        schema.TypeString,
@@ -59,23 +108,11 @@ func resourceSecureWorkloadScope() *schema.Resource {
 				Computed:    true,
 				Description: "Used to sort application priorities; default is last.",
 			},
-			"short_query_type": {
+			"short_query": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				ForceNew:    true,
-				Description: "Scope short query type.",
-			},
-			"short_query_field": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "What resource field to use when evaluating the scope query.",
-			},
-			"short_query_value": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "What resource value to use when evaluating the scope query.",
+				Description: "JSON object representation of an inventory filter query. The query shown in the above example is 'orchestrator_system/name containes Random and Address = 10.0.1.1 or CVE Score v3 >2' ",
 			},
 			"name": {
 				Type:        schema.TypeString,
@@ -128,8 +165,7 @@ func resourceSecureWorkloadScope() *schema.Resource {
 	}
 }
 
-var requiredCreateScopeParams = []string{"short_name", "parent_app_scope_id", "short_query_type",
-	"short_query_field", "short_query_value"}
+var requiredCreateScopeParams = []string{"short_name", "parent_app_scope_id"}
 
 func resourceSecureWorkloadScopeCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(Client)
@@ -142,12 +178,9 @@ func resourceSecureWorkloadScopeCreate(d *schema.ResourceData, meta interface{})
 		ShortName:        d.Get("short_name").(string),
 		Description:      d.Get("description").(string),
 		ParentAppScopeId: d.Get("parent_app_scope_id").(string),
-		ShortQuery: ShortQuery{
-			Type:  d.Get("short_query_type").(string),
-			Field: d.Get("short_query_field").(string),
-			Value: d.Get("short_query_value").(string),
-		},
-		PolicyPriority: d.Get("policy_priority").(int),
+		SubType:          d.Get("sub_type").(string),
+		ShortQuery:       []byte(d.Get("short_query").(string)),
+		PolicyPriority:   d.Get("policy_priority").(int),
 	}
 	scope, err := client.CreateScope(createScopeParams)
 	if err != nil {
@@ -168,9 +201,6 @@ func resourceSecureWorkloadScopeRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("short_name", scope.ShortName)
 	d.Set("description", scope.Description)
 	d.Set("parent_app_scope_id", scope.ParentAppScopeId)
-	d.Set("short_query_type", scope.ShortQuery.Type)
-	d.Set("short_query_field", scope.ShortQuery.Field)
-	d.Set("short_query_value", scope.ShortQuery.Value)
 	d.Set("policy_priority", scope.PolicyPriority)
 	d.Set("name", scope.Name)
 	d.Set("root_app_scope_id", scope.RootAppScopeId)
@@ -191,12 +221,9 @@ func resourceSecureWorkloadScopeUpdate(d *schema.ResourceData, meta interface{})
 		ShortName:        d.Get("short_name").(string),
 		Description:      d.Get("description").(string),
 		ParentAppScopeId: d.Get("parent_app_scope_id").(string),
-		ShortQuery: ShortQuery{
-			Type:  d.Get("short_query_type").(string),
-			Field: d.Get("short_query_field").(string),
-			Value: d.Get("short_query_value").(string),
-		},
-		PolicyPriority: d.Get("policy_priority").(int),
+		ShortQuery:       []byte(d.Get("short_query").(string)),
+		SubType:          d.Get("sub_type").(string),
+		PolicyPriority:   d.Get("policy_priority").(int),
 	}
 	scope, err := client.CreateScope(createScopeParams)
 	if err != nil {
@@ -210,16 +237,16 @@ func resourceSecureWorkloadScopeUpdate(d *schema.ResourceData, meta interface{})
 
 func resourceSecureWorkloadScopeDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(Client)
-	err :=  client.DeleteScope(d.Id())
-	for(err != nil){
-		if(strings.Contains(err.Error(), "error:cannot delete scope because it is in use")){
-			if(timer >= 20 ){
+	err := client.DeleteScope(d.Id())
+	for err != nil {
+		if strings.Contains(err.Error(), "error:cannot delete scope because it is in use") {
+			if timer >= 20 {
 				return err
 			}
 			time.Sleep(60 * time.Second)
-			timer = timer+1
+			timer = timer + 1
 			err = client.DeleteScope(d.Id())
-		}else {
+		} else {
 			return err
 		}
 	}

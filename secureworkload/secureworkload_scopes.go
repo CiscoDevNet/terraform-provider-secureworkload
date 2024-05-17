@@ -1,6 +1,7 @@
 package secureworkload
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -17,19 +18,19 @@ var (
 // the parent scopes (all the way to the root scope).
 type ScopeQuery struct {
 	Type    string       `json:"type"`
-	Field   string       `json:"field,omitemtpy"`
-	Value   interface{}  `json:"value,omitemtpy"`
-	Filters []ScopeQuery `json:"filters,omitemtpy"`
+	Field   string       `json:"field,omitempty"`
+	Value   interface{}  `json:"value,omitempty"`
+	Filters []ScopeQuery `json:"filters,omitempty"`
 }
 
 // Scope wraps a secureworkload scope attributes including the
 // filters used to evaluate the scope and the current state
 // of the scope
 
-type GetScope struct{
-	Id 			   string `json:"id"`
+type GetScope struct {
+	Id             string `json:"id"`
 	ExactShortName string `json:"short_name,omitempty"`
-	ExactName 	   string `json:"name,omitempty"`
+	ExactName      string `json:"name,omitempty"`
 	VRFId          int    `json:"vrf_id,omitempty"`
 	RootAppScopeId string `json:"root_app_scope_id,omitempty"`
 }
@@ -65,21 +66,23 @@ type Scope struct {
 }
 
 // ShortQuery wraps a query used as part of the request to create a scope
-type ShortQuery struct {
-	Type  string      `json:"type"`
-	Field string      `json:"field,omitemtpy"`
-	Value interface{} `json:"value,omitemtpy"`
-}
+// type ShortQuery struct {
+// 	Type  string      `json:"type"`
+// 	Field string      `json:"field,omitempty"`
+// 	Value interface{} `json:"value,omitempty"`
+// }
 
 // CreateScopeRequest wraps parameters for making a request
 // to create a scope
 type CreateScopeRequest struct {
 	// User-specified name for the scope.
 	ShortName string `json:"short_name"`
+
+	SubType string `json:"sub_type,omitempty"`
 	// User-specified description of the scope.
 	Description string `json:"description"`
 	// Filter (or match criteria) associated with the scope.
-	ShortQuery ShortQuery `json:"short_query"`
+	ShortQuery json.RawMessage `json:"short_query,omitempty"`
 	// ID of the parent scope.
 	ParentAppScopeId string `json:"parent_app_scope_id"`
 	// Used to sort application priorities; default is last.
