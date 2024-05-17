@@ -6,16 +6,54 @@ description: |-
   Resource for creating a scope in Secure Workload
   Example
   An example is shown below:
-  hcl
-  resource "secureworkload_scope" "scope" {
-      short_name = "Terraform created scope"
-      short_query_type = "eq"
-      short_query_field = "ip"
-       short_query_value = "1.2.3.4 "
-       parent_app_scope_id = data.secureworkload_scope.scope.id
+  ```hcl
+  resource "secureworkloadscope" "scope" {
+      shortname = "Terraform-created-scope"
+      subtype = "DNSSERVERS"
+      shortquery = file("${path.module}/queryfile.json")
+       parentappscopeid = data.secureworkloadscope.scope.id
+  }
+  resource "secureworkloadscope" "scope2" {
+      shortname = "Terraform-created-scope2"
+      query = <<EOF
+                  {
+                   "type":"eq",
+                   "field": "ip",
+                   "value": "10.0.0.1"
+                   }
+              EOF
+      subtype = "GENERIC"
+       parentappscopeid = data.secureworkloadscope.scope.id
   }
   
-  Note: If creating multiple rules during a single terraform apply, remember to use depends_on to chain the rules so that terraform creates it in the same order that you intended.
+  Example of **query_file.json**
+  json
+  {    "type": "or",
+      "filters": [
+        {
+      "type": "and",
+          "filters": [
+            {
+              "type": "contains",
+              "field": "userorchestratorsystem/name",
+              "value": "Random"
+            },
+            {
+              "type": "eq",
+              "field": "ip",
+              "value": "10.0.1.1"
+            }
+          ]
+        },
+        {
+          "type": "gt",
+          "field": "hosttagscvss",
+          "value": 2
+        }
+      ]
+    }
+  ``
+  **Note:** If creating multiple rules during a singleterraform apply, remember to usedependson` to chain the rules so that terraform creates it in the same order that you intended.
 ---
 
 # secureworkload_scope (Resource)
@@ -26,12 +64,52 @@ Resource for creating a scope in Secure Workload
 An example is shown below: 
 ```hcl
 resource "secureworkload_scope" "scope" {
-    short_name = "Terraform created scope"
-    short_query_type = "eq"
-    short_query_field = "ip"
-	 short_query_value = "1.2.3.4 "
+    short_name = "Terraform-created-scope"
+    sub_type = "DNS_SERVERS"
+    short_query = file("${path.module}/query_file.json") 
 	 parent_app_scope_id = data.secureworkload_scope.scope.id
 }
+
+resource "secureworkload_scope" "scope2" {
+    short_name = "Terraform-created-scope2"
+    query = <<EOF
+                { 
+        		 "type":"eq",
+        		 "field": "ip",
+        		 "value": "10.0.0.1"
+        		 }
+        	EOF
+    sub_type = "GENERIC"
+	 parent_app_scope_id = data.secureworkload_scope.scope.id
+}
+```
+Example of **query_file.json**
+```json
+{	
+	"type": "or",
+	"filters": [ 
+	  {
+	"type": "and",
+		"filters": [ 
+		  { 
+			"type": "contains",
+			"field": "user_orchestrator_system/name",
+			"value": "Random"
+		  },
+		  {
+			"type": "eq",
+			"field": "ip",
+			"value": "10.0.1.1"
+		  }
+		]
+	  },
+	  {
+		"type": "gt",
+		"field": "host_tags_cvss",
+		"value": 2
+	  }
+	]
+  }
 ```
 **Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.
 
@@ -44,14 +122,13 @@ resource "secureworkload_scope" "scope" {
 
 - `parent_app_scope_id` (String) What resource field to use when evaluating the scope query.
 - `short_name` (String) User-specified name for the scope.
-- `short_query_field` (String) What resource field to use when evaluating the scope query.
-- `short_query_type` (String) Scope short query type.
-- `short_query_value` (String) What resource value to use when evaluating the scope query.
 
 ### Optional
 
 - `description` (String) User-specified description of the scope.
 - `policy_priority` (Number) Used to sort application priorities; default is last.
+- `short_query` (String) JSON object representation of an inventory filter query. The query shown in the above example is 'orchestrator_system/name containes Random and Address = 10.0.1.1 or CVE Score v3 >2'
+- `sub_type` (String) User-specified sub type for the scope.
 
 ### Read-Only
 
