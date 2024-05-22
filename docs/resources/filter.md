@@ -24,9 +24,9 @@ description: |-
        app_scope_id = data.secureworkload_scope.scope.id
       name = "New-Filter2"
       query = <<EOF
-                  {                "type":"eq",
+                  {                "type":"subnet",
                    "field": "ip",
-                   "value": "10.0.0.2"
+                   "value": "10.0.2.0/24"
                    }
               EOF
       primary = true 
@@ -60,9 +60,9 @@ resource "secureworkload_filter" "filter2" {
 	 app_scope_id = data.secureworkload_scope.scope.id
     name = "New-Filter2"
     query = <<EOF
-                {        		 "type":"eq",
+                {        		 "type":"subnet",
         		 "field": "ip",
-        		 "value": "10.0.0.2"
+        		 "value": "10.0.2.0/24"
         		 }
         	EOF
     primary = true 
@@ -80,7 +80,7 @@ resource "secureworkload_filter" "filter2" {
 
 - `app_scope_id` (String) ID of the scope associated with the filter.
 - `name` (String) User-specified name for the inventory filter.
-- `query` (String) JSON object representation of an inventory filter query.
+- `query` (String) JSON object representation of an inventory filter query. *type* is operator, *field* is label key & *value* is label value. Operator can any of the following: [and, or, eq, subnet, contains, regex, gt, gte, lt, lte, in, range, ranges, not, all, none]
 
 ### Optional
 
