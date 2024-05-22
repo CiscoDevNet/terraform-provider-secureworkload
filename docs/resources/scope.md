@@ -53,7 +53,7 @@ description: |-
       ]
     }
   ``
-  **Note:** If creating multiple rules during a singleterraform apply, remember to usedependson` to chain the rules so that terraform creates it in the same order that you intended.
+  **Note:** If creating multiple resources for scope during a singleterraform apply, you may have to usedependson` to chain the resources so that terraform creates it in the same order that you intended.
 ---
 
 # secureworkload_scope (Resource)
@@ -111,7 +111,7 @@ Example of **query_file.json**
 	]
   }
 ```
-**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.
+**Note:** If creating multiple resources for scope during a single `terraform apply`, you may have to use `depends_on` to chain the resources so that terraform creates it in the same order that you intended.
 
 
 

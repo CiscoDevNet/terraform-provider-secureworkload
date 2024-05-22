@@ -23,12 +23,26 @@ func resourceSecureWorkloadFilter() *schema.Resource {
 			"        		 \"field\": \"ip\",\n" +
 			"        		 \"value\": \"10.0.0.1\"\n" +
 			"        		 }\n" +
-			"        	EOF\n" +	
+			"        	EOF\n" +
+			"    primary = true \n" +
+			"    public = false \n" +
+			"}\n" +
+			"resource \"secureworkload_filter\" \"filter2\" {\n" +
+			"	 depends_on = [secureworkload_filter.filter1]\n" +
+			"	 app_scope_id = data.secureworkload_scope.scope.id\n" +
+			"    name = \"New-Filter2\"\n" +
+			"    query = <<EOF\n" +
+			"                {" +
+			"        		 \"type\":\"eq\",\n" +
+			"        		 \"field\": \"ip\",\n" +
+			"        		 \"value\": \"10.0.0.2\"\n" +
+			"        		 }\n" +
+			"        	EOF\n" +
 			"    primary = true \n" +
 			"    public = false \n" +
 			"}\n" +
 			"```\n" +
-			"**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.\n" ,
+			"**Note:** If creating multiple filters during a single `terraform apply`, remember to use `depends_on` to chain the filters so that terraform creates them in a specific order to avoid *429:too_many_request* error.\n",
 		Create: resourceSecureWorkloadFilterCreate,
 		Update: nil,
 		Read:   resourceSecureWorkloadFilterRead,

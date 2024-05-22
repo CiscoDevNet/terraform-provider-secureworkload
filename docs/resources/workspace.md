@@ -54,7 +54,7 @@ description: |-
       catch all action  = false 
   }
   
-  Note: If creating multiple rules during a single terraform apply, remember to use depends_on to chain the rules so that terraform creates it in the same order that you intended.
+  Note: If creating multiple resources for workspaces during a single terraform apply, you may have to use depends_on to chain the resources so that terraform creates it in the same order that you intended.
 ---
 
 # secureworkload_workspace (Resource)
@@ -111,7 +111,7 @@ resource "secureworkload_workspace" "workspace1" {
     catch all action  = false 
 }
 ```
-**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.
+**Note:** If creating multiple resources for workspaces during a single `terraform apply`, you may have to use `depends_on` to chain the resources so that terraform creates it in the same order that you intended.
 
 
 

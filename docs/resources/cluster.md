@@ -19,8 +19,21 @@ description: |-
               EOF
       approved = false 
   }
+  resource "secureworkload_cluster" "cluster2" {
+      depends_on = [secureworkload_cluster.cluster] 
+       workspace_id = data.secureworkload_workspace.workspace.id
+      name = "New-Cluster2"
+      description = "Second Cluster via TF"
+      query = <<EOF
+                  {                "type":"eq",
+                   "field": "ip",
+                   "value": "10.0.0.2"
+                   }
+              EOF
+      approved = false 
+  }
   
-  Note: If creating multiple rules during a single terraform apply, remember to use depends_on to chain the rules so that terraform creates it in the same order that you intended.
+  Note: If creating multiple clusters during a single terraform apply, remember to use depends_on to chain the filters so that terraform creates them in a specific order to avoid 429:toomanyrequest error.
 ---
 
 # secureworkload_cluster (Resource)
@@ -42,8 +55,21 @@ resource "secureworkload_cluster" "cluster" {
         	EOF
     approved = false 
 }
+resource "secureworkload_cluster" "cluster2" {
+    depends_on = [secureworkload_cluster.cluster] 
+	 workspace_id = data.secureworkload_workspace.workspace.id
+    name = "New-Cluster2"
+    description = "Second Cluster via TF"
+    query = <<EOF
+                {        		 "type":"eq",
+        		 "field": "ip",
+        		 "value": "10.0.0.2"
+        		 }
+        	EOF
+    approved = false 
+}
 ```
-**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.
+**Note:** If creating multiple clusters during a single `terraform apply`, remember to use `depends_on` to chain the filters so that terraform creates them in a specific order to avoid *429:too_many_request* error.
 
 
 

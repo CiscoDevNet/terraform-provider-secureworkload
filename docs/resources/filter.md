@@ -19,8 +19,21 @@ description: |-
       primary = true 
       public = false 
   }
+  resource "secureworkload_filter" "filter2" {
+       depends_on = [secureworkload_filter.filter1]
+       app_scope_id = data.secureworkload_scope.scope.id
+      name = "New-Filter2"
+      query = <<EOF
+                  {                "type":"eq",
+                   "field": "ip",
+                   "value": "10.0.0.2"
+                   }
+              EOF
+      primary = true 
+      public = false 
+  }
   
-  Note: If creating multiple rules during a single terraform apply, remember to use depends_on to chain the rules so that terraform creates it in the same order that you intended.
+  Note: If creating multiple filters during a single terraform apply, remember to use depends_on to chain the filters so that terraform creates them in a specific order to avoid 429:toomanyrequest error.
 ---
 
 # secureworkload_filter (Resource)
@@ -42,8 +55,21 @@ resource "secureworkload_filter" "filter1" {
     primary = true 
     public = false 
 }
+resource "secureworkload_filter" "filter2" {
+	 depends_on = [secureworkload_filter.filter1]
+	 app_scope_id = data.secureworkload_scope.scope.id
+    name = "New-Filter2"
+    query = <<EOF
+                {        		 "type":"eq",
+        		 "field": "ip",
+        		 "value": "10.0.0.2"
+        		 }
+        	EOF
+    primary = true 
+    public = false 
+}
 ```
-**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.
+**Note:** If creating multiple filters during a single `terraform apply`, remember to use `depends_on` to chain the filters so that terraform creates them in a specific order to avoid *429:too_many_request* error.
 
 
 

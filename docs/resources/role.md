@@ -15,7 +15,7 @@ description: |-
       description = "Demo description for role"
   }
   
-  Note: If creating multiple rules during a single terraform apply, remember to use depends_on to chain the rules so that terraform creates it in the same order that you intended.
+  Note: If creating multiple resources for role during a single terraform apply, you may have to use depends_on to chain the resources so that terraform creates it in the same order that you intended.
 ---
 
 # secureworkload_role (Resource)
@@ -33,7 +33,7 @@ resource "secureworkload_role" "role1" {
     description = "Demo description for role"
 }
 ```
-**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.
+**Note:** If creating multiple resources for role during a single `terraform apply`, you may have to use `depends_on` to chain the resources so that terraform creates it in the same order that you intended.
 
 
 
