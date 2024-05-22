@@ -33,9 +33,9 @@ func resourceSecureWorkloadFilter() *schema.Resource {
 			"    name = \"New-Filter2\"\n" +
 			"    query = <<EOF\n" +
 			"                {" +
-			"        		 \"type\":\"eq\",\n" +
+			"        		 \"type\":\"subnet\",\n" +
 			"        		 \"field\": \"ip\",\n" +
-			"        		 \"value\": \"10.0.0.2\"\n" +
+			"        		 \"value\": \"10.0.2.0/24\"\n" +
 			"        		 }\n" +
 			"        	EOF\n" +
 			"    primary = true \n" +
@@ -62,7 +62,7 @@ func resourceSecureWorkloadFilter() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "JSON object representation of an inventory filter query.",
+				Description: "JSON object representation of an inventory filter query. *type* is operator, *field* is label key & *value* is label value. Operator can any of the following: [and, or, eq, subnet, contains, regex, gt, gte, lt, lte, in, range, ranges, not, all, none]",
 			},
 			"app_scope_id": {
 				Type:        schema.TypeString,

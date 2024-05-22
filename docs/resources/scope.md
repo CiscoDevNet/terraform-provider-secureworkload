@@ -17,9 +17,9 @@ description: |-
       shortname = "Terraform-created-scope2"
       query = <<EOF
                   {
-                   "type":"eq",
+                   "type":"subnet",
                    "field": "ip",
-                   "value": "10.0.0.1"
+                   "value": "10.0.1.0/24"
                    }
               EOF
       subtype = "GENERIC"
@@ -74,9 +74,9 @@ resource "secureworkload_scope" "scope2" {
     short_name = "Terraform-created-scope2"
     query = <<EOF
                 { 
-        		 "type":"eq",
+        		 "type":"subnet",
         		 "field": "ip",
-        		 "value": "10.0.0.1"
+        		 "value": "10.0.1.0/24"
         		 }
         	EOF
     sub_type = "GENERIC"
@@ -127,7 +127,7 @@ Example of **query_file.json**
 
 - `description` (String) User-specified description of the scope.
 - `policy_priority` (Number) Used to sort application priorities; default is last.
-- `short_query` (String) JSON object representation of an inventory filter query. The query shown in the above example is 'orchestrator_system/name containes Random and Address = 10.0.1.1 or CVE Score v3 >2'
+- `short_query` (String) JSON object representation of an inventory filter query. The query shown in the above example is 'orchestrator_system/name containes Random and Address = 10.0.1.1 or CVE Score v3 >2'.Operator can any of the following: [and, or, eq, subnet, contains, regex, gt, gte, lt, lte, in, range, ranges, not, all, none]
 - `sub_type` (String) User-specified sub type for the scope.
 
 ### Read-Only

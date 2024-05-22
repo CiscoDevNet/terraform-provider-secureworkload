@@ -25,9 +25,9 @@ description: |-
       name = "New-Cluster2"
       description = "Second Cluster via TF"
       query = <<EOF
-                  {                "type":"eq",
+                  {                "type":"subnet",
                    "field": "ip",
-                   "value": "10.0.0.2"
+                   "value": "10.0.2.0/24"
                    }
               EOF
       approved = false 
@@ -61,9 +61,9 @@ resource "secureworkload_cluster" "cluster2" {
     name = "New-Cluster2"
     description = "Second Cluster via TF"
     query = <<EOF
-                {        		 "type":"eq",
+                {        		 "type":"subnet",
         		 "field": "ip",
-        		 "value": "10.0.0.2"
+        		 "value": "10.0.2.0/24"
         		 }
         	EOF
     approved = false 
@@ -85,7 +85,7 @@ resource "secureworkload_cluster" "cluster2" {
 
 - `approved` (Boolean) (optional) An approved cluster will not be updated during an automatic policy discovery run. Default false.
 - `description` (String) (optional) The description of the cluster.
-- `query` (String) JSON object representation of an inventory cluster query.
+- `query` (String) JSON object representation of an inventory filter query. *type* is operator, *field* is label key & *value* is label value. Operator can any of the following: [and, or, eq, subnet, contains, regex, gt, gte, lt, lte, in, range, ranges, not, all, none]
 - `version` (String) Indicates the version of the workspace the cluster will be added to.
 
 ### Read-Only

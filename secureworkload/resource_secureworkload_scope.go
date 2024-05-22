@@ -30,9 +30,9 @@ func resourceSecureWorkloadScope() *schema.Resource {
 			"    short_name = \"Terraform-created-scope2\"\n" +
 			"    query = <<EOF\n" +
 			"                { \n" +
-			"        		 \"type\":\"eq\",\n" +
+			"        		 \"type\":\"subnet\",\n" +
 			"        		 \"field\": \"ip\",\n" +
-			"        		 \"value\": \"10.0.0.1\"\n" +
+			"        		 \"value\": \"10.0.1.0/24\"\n" +
 			"        		 }\n" +
 			"        	EOF\n" +
 			"    sub_type = \"GENERIC\"\n" +
@@ -112,7 +112,7 @@ func resourceSecureWorkloadScope() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
-				Description: "JSON object representation of an inventory filter query. The query shown in the above example is 'orchestrator_system/name containes Random and Address = 10.0.1.1 or CVE Score v3 >2' ",
+				Description: "JSON object representation of an inventory filter query. The query shown in the above example is 'orchestrator_system/name containes Random and Address = 10.0.1.1 or CVE Score v3 >2'.Operator can any of the following: [and, or, eq, subnet, contains, regex, gt, gte, lt, lte, in, range, ranges, not, all, none] ",
 			},
 			"name": {
 				Type:        schema.TypeString,
