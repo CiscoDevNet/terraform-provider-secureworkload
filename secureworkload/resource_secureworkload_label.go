@@ -27,10 +27,10 @@ func resourceSecureWorkloadLabel() *schema.Resource {
 			"        Environment = \"test\"\n" +
 			"        Datacenter = \"aws\"\n" +
 			"        app_name = \"app_name\"\n" +
-			"    }\n" +	
+			"    }\n" +
 			"}\n" +
 			"```\n" +
-			"**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.\n" ,
+			"**Note:** If creating multiple resources for label during a single `terraform apply`, you may have to use `depends_on` to chain the resources so that terraform creates it in the same order that you intended.\n",
 		Create: resourceSecureWorkloadTagCreate,
 		Update: resourceSecureWorkloadTagCreate,
 		Read:   resourceSecureWorkloadTagRead,

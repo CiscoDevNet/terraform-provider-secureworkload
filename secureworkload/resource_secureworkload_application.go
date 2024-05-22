@@ -64,7 +64,7 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 			"    catch all action  = false \n" +
 			"}\n" +
 			"```\n" +
-			"**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.\n" ,
+			"**Note:** If creating multiple resources for workspaces during a single `terraform apply`, you may have to use `depends_on` to chain the resources so that terraform creates it in the same order that you intended.\n",
 		Create:        resourceSecureWorkloadApplicationCreate,
 		Read:          resourceSecureWorkloadApplicationRead,
 		Delete:        resourceSecureWorkloadApplicationDelete,
@@ -229,12 +229,11 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 									"port_range": {
 										Type:        schema.TypeList,
 										Required:    true,
-										MinItems: 2,
-										MaxItems: 2,
+										MinItems:    2,
+										MaxItems:    2,
 										Description: "Inclusive range of ports; for example, [80, 80] or [5000, 6000].",
 										Elem: &schema.Schema{
-											Type:     schema.TypeInt,
-								
+											Type: schema.TypeInt,
 										},
 									},
 									"approved": {
@@ -296,12 +295,11 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 									"port_range": {
 										Type:        schema.TypeList,
 										Required:    true,
-										MinItems: 2,
-										MaxItems: 2,
+										MinItems:    2,
+										MaxItems:    2,
 										Description: "Inclusive range of ports; for example, [80, 80] or [5000, 6000].",
 										Elem: &schema.Schema{
-											Type:     schema.TypeInt,
-											
+											Type: schema.TypeInt,
 										},
 									},
 									"approved": {

@@ -5,14 +5,13 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
 	// client "github.com/secureworkload-exchange/terraform-go-sdk"
 	// secureworkload "github.com/secureworkload-exchange/terraform-go-sdk"
 )
 
 var (
-	// ValidAbilities        = []string{"SCOPE_READ", "SCOPE_WRITE", "EXECUTE", "ENFORCE", "SCOPE_OWNER", "DEVELOPER"}
-	// AccessTypeDescription = fmt.Sprintf("The type of access to grant the role to the `access_app_scope_id` scope.\n Valid values are [%s]", strings.Join(ValidAbilities, ", "))
+// ValidAbilities        = []string{"SCOPE_READ", "SCOPE_WRITE", "EXECUTE", "ENFORCE", "SCOPE_OWNER", "DEVELOPER"}
+// AccessTypeDescription = fmt.Sprintf("The type of access to grant the role to the `access_app_scope_id` scope.\n Valid values are [%s]", strings.Join(ValidAbilities, ", "))
 )
 
 func resourceSecureWorkloadRole() *schema.Resource {
@@ -30,7 +29,7 @@ func resourceSecureWorkloadRole() *schema.Resource {
 			"    description = \"Demo description for role\"\n" +
 			"}\n" +
 			"```\n" +
-			"**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.\n" ,
+			"**Note:** If creating multiple resources for role during a single `terraform apply`, you may have to use `depends_on` to chain the resources so that terraform creates it in the same order that you intended.\n",
 		Create: resourceSecureWorkloadRoleCreate,
 		Update: nil,
 		Read:   resourceSecureWorkloadRoleRead,
@@ -65,10 +64,10 @@ func resourceSecureWorkloadRole() *schema.Resource {
 				Description: "The scope in which this role will be created",
 			},
 			"access_type": {
-				Type:         schema.TypeString,
-				Required:     true,
-				ForceNew:     true,
-				Description:  `The type of access to grant the role to the "access_app_scope_id" scope.\n Valid values are SCOPE_READ", "SCOPE_WRITE", "EXECUTE", "ENFORCE", "SCOPE_OWNER", "DEVELOPER"`,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: `The type of access to grant the role to the "access_app_scope_id" scope.\n Valid values are SCOPE_READ", "SCOPE_WRITE", "EXECUTE", "ENFORCE", "SCOPE_OWNER", "DEVELOPER"`,
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					v := strings.ToUpper(val.(string))
 					allowedValues := []string{"SCOPE_READ", "SCOPE_WRITE", "EXECUTE", "ENFORCE", "SCOPE_OWNER", "DEVELOPER"}

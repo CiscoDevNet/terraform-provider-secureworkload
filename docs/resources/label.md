@@ -17,7 +17,7 @@ description: |-
       }
   }
   
-  Note: If creating multiple rules during a single terraform apply, remember to use depends_on to chain the rules so that terraform creates it in the same order that you intended.
+  Note: If creating multiple resources for label during a single terraform apply, you may have to use depends_on to chain the resources so that terraform creates it in the same order that you intended.
 ---
 
 # secureworkload_label (Resource)
@@ -37,7 +37,7 @@ resource "secureworkload_label" "label-1" {
     }
 }
 ```
-**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.
+**Note:** If creating multiple resources for label during a single `terraform apply`, you may have to use `depends_on` to chain the resources so that terraform creates it in the same order that you intended.
 
 
 

@@ -27,8 +27,22 @@ func resourceSecureWorkloadCluster() *schema.Resource {
 			"        	EOF\n" +
 			"    approved = false \n" +
 			"}\n" +
+			"resource \"secureworkload_cluster\" \"cluster2\" {\n" +
+			"    depends_on = [secureworkload_cluster.cluster] \n" +
+			"	 workspace_id = data.secureworkload_workspace.workspace.id\n" +
+			"    name = \"New-Cluster2\"\n" +
+			"    description = \"Second Cluster via TF\"\n" +
+			"    query = <<EOF\n" +
+			"                {" +
+			"        		 \"type\":\"eq\",\n" +
+			"        		 \"field\": \"ip\",\n" +
+			"        		 \"value\": \"10.0.0.2\"\n" +
+			"        		 }\n" +
+			"        	EOF\n" +
+			"    approved = false \n" +
+			"}\n" +
 			"```\n" +
-			"**Note:** If creating multiple rules during a single `terraform apply`, remember to use `depends_on` to chain the rules so that terraform creates it in the same order that you intended.\n",
+			"**Note:** If creating multiple clusters during a single `terraform apply`, remember to use `depends_on` to chain the filters so that terraform creates them in a specific order to avoid *429:too_many_request* error.\n",
 		Create: resourceSecureWorkloadClusterCreate,
 		Update: nil,
 		Read:   resourceSecureWorkloadClusterRead,
