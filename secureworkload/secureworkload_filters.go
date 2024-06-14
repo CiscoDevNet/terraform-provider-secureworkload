@@ -49,6 +49,18 @@ type CreateFilterRequest struct {
 	Public bool `json:"public"`
 }
 
+func (c Client) GetFilterByParam(getUrl string) ([]Application, error) {
+	var filter []Application
+	url := c.Config.APIURL + FiltersAPIV1BasePath
+	request, err := signer.CreateJSONRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return filter, err
+	}
+	Log.Debug(request)
+	err = c.Do(request, &filter)
+	return filter, err
+}
+
 // CreateFilter creates a filters with the specified params,
 // returning the created filters and error (if any).
 func (c Client) CreateFilter(params CreateFilterRequest) (Filter, error) {
