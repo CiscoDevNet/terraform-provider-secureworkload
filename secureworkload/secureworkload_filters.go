@@ -56,7 +56,6 @@ func (c Client) GetFilterByParam(getUrl string) ([]Application, error) {
 	if err != nil {
 		return filter, err
 	}
-	Log.Debug(request)
 	err = c.Do(request, &filter)
 	return filter, err
 }
