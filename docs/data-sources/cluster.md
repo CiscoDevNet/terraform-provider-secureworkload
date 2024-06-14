@@ -5,12 +5,13 @@ subcategory: ""
 description: |-
   Data source for fetching cluster from a workspace
   An example is shown below:
-  ```hcl
-  data "secureworkloadcluster" "clusters" {
-      workspaceid = "data.secureworkload_workspace.workspace1.id"
-      name = "cluster1"
+  hcl
+  data "secureworkload_cluster" "clusters" {
+      workspace_id = "data.secureworkload_workspace.workspace1.id"
+      name = "cluster1" 
   }
   Note: If cluster with the given name is not found, this data source block will respond with the first cluster in the list.
+  ```
 ---
 
 # secureworkload_cluster (Data Source)
@@ -23,7 +24,8 @@ data "secureworkload_cluster" "clusters" {
 	workspace_id = "data.secureworkload_workspace.workspace1.id"
 	name = "cluster1" 
 }
-**Note:** If cluster with the given name is not found, this data source block will respond with the first cluster in the list.
+```**Note:** If cluster with the given name is not found, this data source block will respond with the first cluster in the list.
+```
 
 
 

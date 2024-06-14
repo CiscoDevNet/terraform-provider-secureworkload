@@ -55,6 +55,7 @@ func Provider() *schema.Provider {
 			"secureworkload_workspace": dataSourceSecureWorkloadApplication(),
 			"secureworkload_role":      dataSourceSecureWorkloadRole(),
 			"secureworkload_cluster":   dataSourceSecureWorkloadCluster(),
+			"secureworkload_filter":    dataSourceSecureWorkloadFilter(),
 		},
 		ConfigureFunc: configureClient,
 	}
