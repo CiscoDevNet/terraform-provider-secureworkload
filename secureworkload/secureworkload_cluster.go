@@ -35,6 +35,17 @@ type CreateClusterRequest struct {
 	Approved    bool            `json:"approved"`
 }
 
+func (c Client) GetClusterByParam(getUrl string, name string) ([]Clusters, error) {
+	var cluster []Clusters
+	url := c.Config.APIURL + ClustersAPIV1BasePath + getUrl
+	request, err := signer.CreateJSONRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	err = c.Do(request, &cluster)
+	return cluster, err
+}
+
 func (c Client) CreateCluster(params CreateClusterRequest, workspace_id string) (Clusters, error) {
 	var cluster Clusters
 	url := c.Config.APIURL + ClustersAPIV1BasePath + workspace_id + "/clusters"
