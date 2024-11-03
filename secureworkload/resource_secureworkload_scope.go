@@ -28,7 +28,7 @@ func resourceSecureWorkloadScope() *schema.Resource {
 			"\n" +
 			"resource \"secureworkload_scope\" \"scope2\" {\n" +
 			"    short_name = \"Terraform-created-scope2\"\n" +
-			"    query = <<EOF\n" +
+			"    short_query = <<EOF\n" +
 			"                { \n" +
 			"        		 \"type\":\"subnet\",\n" +
 			"        		 \"field\": \"ip\",\n" +
