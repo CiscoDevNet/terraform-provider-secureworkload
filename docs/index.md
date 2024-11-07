@@ -14,22 +14,38 @@ This provider can be used to manage the Secure Workload configuration.
 
 You can manage the following resources with this provider:
 
-- Application
+- Workspace
 - Scope
 - Filter
 - Label
 - User
 - Role
+- Clusters
+- Policies & Ports
+- Policy Enforcement
 
 Further, the provider provides the below data sources:
 
 - Scope
+- Cluster
+- Filter
+- Role
+- Scope
+- Workspace
 
 ## Example
 
 An example provider initialization is shown below:
 
 ```hcl
+terraform {
+  required_providers {
+    secureworkload = {
+      source = "CiscoDevNet/secureworkload"
+    }
+  }
+}
+
 provider "secureworkload" {
     api_key                  = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
     api_secret               = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
