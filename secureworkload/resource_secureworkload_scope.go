@@ -161,6 +161,12 @@ func resourceSecureWorkloadScope() *schema.Resource {
 				Computed:    true,
 				Description: "Unix Epoch timestamp when scope was last updated.",
 			},
+			"commit_on_update": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Whether to commit the scope changes on update.",
+			},
 		},
 	}
 }
@@ -228,6 +234,21 @@ func resourceSecureWorkloadScopeUpdate(d *schema.ResourceData, meta interface{})
 	if err != nil {
 		return err
 	}
+	if d.Get("commit_on_update").(bool) {
+		commitDirtyScopeParams := CommitDirtyScopeRequest{
+			ParentAppScopeId: d.Get("root_app_scope_id").(string),
+			Sync:             true,
+		}
+
+		scope, err := client.CommitDirtyScope(commitDirtyScopeParams)
+
+		if err != nil {
+			return err
+		}
+
+		d.Set("sync", scope.CommitDirty)
+	}
+	d.Set("short_query", scope.ShortQuery)
 	d.Set("description", scope.Description)
 	d.Set("policy_priority", scope.PolicyPriority)
 	d.SetId(scope.Id)
