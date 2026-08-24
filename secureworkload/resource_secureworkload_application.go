@@ -67,6 +67,7 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 			"**Note:** If creating multiple resources for workspaces during a single `terraform apply`, you may have to use `depends_on` to chain the resources so that terraform creates it in the same order that you intended.\n",
 		Create:        resourceSecureWorkloadApplicationCreate,
 		Read:          resourceSecureWorkloadApplicationRead,
+		Update:        resourceSecureWorkloadApplicationUpdate,
 		Delete:        resourceSecureWorkloadApplicationDelete,
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
@@ -79,16 +80,14 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 			"name": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew:    true,
 				Computed:    true,
-				Description: "(Optional) User-specified name for the application.",
+				Description: "(Optional) User-specified name for the application. Updated in place (no replacement) via PUT /applications/{id}.",
 			},
 			"description": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew:    true,
 				Computed:    true,
-				Description: "(Optional) User-specified description of the application.",
+				Description: "(Optional) User-specified description of the application. Updated in place (no replacement) via PUT /applications/{id}.",
 			},
 			"alternate_query_mode": {
 				Type:        schema.TypeBool,
@@ -105,9 +104,8 @@ func resourceSecureWorkloadApplication() *schema.Resource {
 			"primary": {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				ForceNew:    true,
 				Default:     true,
-				Description: "(Optional) Set to true to indicate this application is primary for the given scope. Default value is true.",
+				Description: "(Optional) Set to true to indicate this application is primary for the given scope. Default value is true. Updated in place (no replacement) via PUT /applications/{id}. The API enforces one primary application per scope and returns an error if this would conflict with an existing primary workspace.",
 			},
 			"cluster": {
 				Type:        schema.TypeList,
@@ -587,6 +585,35 @@ func layer4NetworkPolicyFromTerraform(tf terraformObject) Layer4NetworkPolicy {
 	}
 }
 
+func resourceSecureWorkloadApplicationUpdate(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(Client)
+	updateApplicationParams := UpdateApplicationRequest{}
+	changed := false
+	if d.HasChange("name") {
+		updateApplicationParams.Name = d.Get("name").(string)
+		changed = true
+	}
+	if d.HasChange("description") {
+		updateApplicationParams.Description = d.Get("description").(string)
+		changed = true
+	}
+	if d.HasChange("primary") {
+		primary := d.Get("primary").(bool)
+		updateApplicationParams.Primary = &primary
+		changed = true
+	}
+	if changed {
+		_, err := client.UpdateApplication(updateApplicationParams, d.Id())
+		if err != nil {
+			// Surface the error unmodified: a 422 here is typically the
+			// one-primary-per-scope conflict returned by the API, which is
+			// genuinely useful information for the user.
+			return err
+		}
+	}
+	return resourceSecureWorkloadApplicationRead(d, meta)
+}
+
 func resourceSecureWorkloadApplicationRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(Client)
 	describeApplicatioParams := DescribeApplicationRequest{
@@ -594,15 +621,62 @@ func resourceSecureWorkloadApplicationRead(d *schema.ResourceData, meta interfac
 	}
 	application, err := client.DescribeApplication(describeApplicatioParams)
 	if err != nil {
+		if IsNotFound(err) {
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
-	d.Set("name", application.Name)
-	d.Set("description", application.Description)
-	d.Set("primary", application.Primary)
-	d.Set("alternate_query_mode", application.AlternateQueryMode)
-	d.Set("latest_adm_version", application.LatestADMVersion)
-	d.Set("enforcement_enabled", application.EnforcementEnabled)
-	d.Set("enforced_version", application.EnforcedVersion)
+	if err := d.Set("name", application.Name); err != nil {
+		return err
+	}
+	if err := d.Set("description", application.Description); err != nil {
+		return err
+	}
+	if err := d.Set("primary", application.Primary); err != nil {
+		return err
+	}
+	// app_scope_id was previously never refreshed here, even though it is
+	// part of the API response. Setting it keeps state in sync in case it
+	// ever drifts (e.g. imported resources), even though the field itself
+	// remains ForceNew since the API silently ignores attempts to change
+	// it via PUT.
+	if err := d.Set("app_scope_id", application.AppScopeId); err != nil {
+		return err
+	}
+	// alternate_query_mode is intentionally NOT refreshed here. The
+	// Application struct declares an `alternate_query_mode` JSON tag, but
+	// live GET/PUT responses from the API do not actually include this
+	// field (see live-verified sample response in the #36 follow-up
+	// investigation). Since the field is absent from the response body,
+	// json.Unmarshal leaves it at its zero value (false), and setting it
+	// unconditionally here would clobber the user's configured value with
+	// `false` on every read/refresh -- a permanent diff on a ForceNew
+	// attribute, i.e. exactly the bug class this fix addresses.
+	//
+	// strict_validation is a create-only request parameter (it only
+	// exists on CreateApplicationRequest, not on the Application response
+	// type returned by the API), so there is nothing to refresh for it
+	// either.
+	//
+	// cluster / filter / absolute_policy / default_policy /
+	// catch_all_action are intentionally NOT refreshed here either. The
+	// Application response struct returned by DescribeApplication cannot
+	// represent any of these nested structures, and inventing a
+	// flattening from some other endpoint would risk introducing new
+	// permanent diffs rather than fixing this one. These attributes
+	// remain ForceNew, so Terraform will always plan a full replacement
+	// if the user changes them, and there's no correctness gap in leaving
+	// them un-refreshed on every plain Read.
+	if err := d.Set("latest_adm_version", application.LatestADMVersion); err != nil {
+		return err
+	}
+	if err := d.Set("enforcement_enabled", application.EnforcementEnabled); err != nil {
+		return err
+	}
+	if err := d.Set("enforced_version", application.EnforcedVersion); err != nil {
+		return err
+	}
 	return nil
 }
 
