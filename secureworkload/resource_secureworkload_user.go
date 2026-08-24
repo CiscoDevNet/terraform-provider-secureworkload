@@ -113,7 +113,7 @@ func resourceSecureWorkloadUserCreate(d *schema.ResourceData, meta interface{}) 
 		}
 	}
 	tfRoleIds := d.Get("role_ids").(*schema.Set).List()
-	roleIds := make([]string, len(tfRoleIds))
+	roleIds := make([]string, 0, len(tfRoleIds))
 	for _, tfRoleId := range tfRoleIds {
 		roleIds = append(roleIds, tfRoleId.(string))
 	}
@@ -136,6 +136,10 @@ func resourceSecureWorkloadUserRead(d *schema.ResourceData, meta interface{}) er
 	client := meta.(Client)
 	user, err := client.DescribeUser(d.Id())
 	if err != nil {
+		if IsNotFound(err) {
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 	d.Set("email", user.Email)
