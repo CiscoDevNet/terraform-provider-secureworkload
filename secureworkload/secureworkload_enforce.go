@@ -1,6 +1,7 @@
 package secureworkload
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -36,6 +37,18 @@ type ApplicationVersion struct {
 	LastEnforcementEventAt int64  `json:"last_enforcement_event_at,omitempty"`
 }
 
+// isNotModified reports whether err is (or wraps) an *APIError with a 304
+// Not Modified status code. For an idempotent enable_enforce call, a 304
+// means enforcement is already active at the requested version -- which is
+// exactly the success condition, not a failure.
+func isNotModified(err error) bool {
+	var apiErr *APIError
+	if errors.As(err, &apiErr) {
+		return apiErr.StatusCode == http.StatusNotModified
+	}
+	return false
+}
+
 func (c Client) CreateEnforce(params CreateEnforceRequest, workspace_id string) (Enforce, error) {
 	var enforce Enforce
 	url := c.Config.APIURL + EnforceAPIV1BasePath + workspace_id + "/enable_enforce"
@@ -44,6 +57,10 @@ func (c Client) CreateEnforce(params CreateEnforceRequest, workspace_id string) 
 		return enforce, err
 	}
 	err = c.Do(request, &enforce)
+	if err != nil && isNotModified(err) {
+		// Already enforced at the requested version -- treat as success.
+		return enforce, nil
+	}
 	return enforce, err
 }
 

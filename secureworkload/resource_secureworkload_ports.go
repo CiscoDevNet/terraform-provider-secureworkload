@@ -1,7 +1,10 @@
 package secureworkload
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	// client "github.com/secureworkload-exchange/terraform-go-sdk"
@@ -27,7 +30,14 @@ func resourceSecureWorkloadPort() *schema.Resource {
 		Read:   resourceSecureWorkloadPortRead,
 		Delete: resourceSecureWorkloadPortDelete,
 
-		SchemaVersion: 1,
+		SchemaVersion: 2,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Version: 1,
+				Type:    resourceSecureWorkloadPortV1().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceSecureWorkloadPortStateUpgradeV1,
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"policy_id": {
@@ -71,6 +81,115 @@ func resourceSecureWorkloadPort() *schema.Resource {
 }
 
 var requiredCreatePortParams = []string{"policy_id", "start_port", "end_port"}
+
+// resourceSecureWorkloadPortV1 returns the pre-upgrade (SchemaVersion 1)
+// shape of this resource. It only needs the schema map (no CRUD funcs) so
+// that CoreConfigSchema().ImpliedType() can be used to describe the prior
+// on-disk state shape to the StateUpgrader machinery.
+func resourceSecureWorkloadPortV1() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"policy_id": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"version": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+			"start_port": {
+				Type:     schema.TypeInt,
+				Required: true,
+				ForceNew: true,
+			},
+			"end_port": {
+				Type:     schema.TypeInt,
+				Required: true,
+				ForceNew: true,
+			},
+			"proto": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				ForceNew: true,
+			},
+		},
+	}
+}
+
+// rawStateInt defensively coerces a rawState value (as decoded from the
+// upgrader's cty->JSON round trip) into an int. Values commonly arrive as
+// float64 (from encoding/json-style decoding) but json.Number or a plain
+// int are also tolerated. Anything else, or a nil, yields 0.
+func rawStateInt(v interface{}) int {
+	switch n := v.(type) {
+	case int:
+		return n
+	case int64:
+		return int(n)
+	case float64:
+		return int(n)
+	case json.Number:
+		i, err := n.Int64()
+		if err != nil {
+			return 0
+		}
+		return int(i)
+	case string:
+		i, err := strconv.Atoi(n)
+		if err != nil {
+			return 0
+		}
+		return i
+	default:
+		return 0
+	}
+}
+
+// resourceSecureWorkloadPortStateUpgradeV1 migrates state written by the
+// buggy pre-fix provider version, which stored the PARENT POLICY id as the
+// port resource's id instead of the l4_param id. It resolves the real
+// l4_param id by looking up the policy's current l4_params and matching on
+// proto/start_port/end_port, reusing the same matching logic used by
+// CreatePort.
+func resourceSecureWorkloadPortStateUpgradeV1(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+	id, _ := rawState["id"].(string)
+	policyId, _ := rawState["policy_id"].(string)
+
+	// Only the buggy shape (id == policy_id) needs migrating. Anything
+	// else is either already correct or unrecognisable; leave it as-is.
+	if id == "" || policyId == "" || id != policyId {
+		return rawState, nil
+	}
+
+	proto := rawStateInt(rawState["proto"])
+	startPort := rawStateInt(rawState["start_port"])
+	endPort := rawStateInt(rawState["end_port"])
+
+	client := meta.(Client)
+	policy, err := client.DescribePolicyL4Params(policyId)
+	if err != nil {
+		return rawState, err
+	}
+
+	matchParams := CreatePortRequest{
+		StartPort: startPort,
+		EndPort:   endPort,
+		Proto:     proto,
+	}
+	if match, found := findMatchingL4Param(policy.L4Params, matchParams); found {
+		rawState["id"] = match.Id
+	}
+	// If no match is found, the port may genuinely have been deleted out
+	// of band; leave state unchanged and let Read clear it correctly.
+	return rawState, nil
+}
 
 func resourceSecureWorkloadPortCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(Client)

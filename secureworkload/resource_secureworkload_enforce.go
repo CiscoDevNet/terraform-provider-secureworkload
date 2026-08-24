@@ -1,6 +1,7 @@
 package secureworkload
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -32,7 +33,14 @@ func resourceSecureWorkloadEnforce() *schema.Resource {
 		Read:   resourceSecureWorkloadEnforceRead,
 		Delete: resourceSecureWorkloadEnforceDelete,
 
-		SchemaVersion: 1,
+		SchemaVersion: 2,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Version: 1,
+				Type:    resourceSecureWorkloadEnforceV1().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceSecureWorkloadEnforceStateUpgradeV1,
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"workspace_id": {
@@ -77,6 +85,43 @@ func resourceSecureWorkloadEnforce() *schema.Resource {
 }
 
 var requiredCreateEnforceParams = []string{"workspace_id"}
+
+// resourceSecureWorkloadEnforceV1 returns the pre-upgrade (SchemaVersion 1)
+// shape of this resource, i.e. the fields that existed on the buggy
+// released version that stored an enforcement epoch as the resource id.
+// Only the schema map is needed (no CRUD funcs) so that
+// CoreConfigSchema().ImpliedType() can describe the prior on-disk state
+// shape to the StateUpgrader machinery.
+func resourceSecureWorkloadEnforceV1() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"workspace_id": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"version": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+		},
+	}
+}
+
+// resourceSecureWorkloadEnforceStateUpgradeV1 migrates state written by the
+// buggy pre-fix provider version, which stored the enforcement EPOCH as the
+// resource id instead of the workspace id. This is pure state manipulation:
+// no API call is needed since workspace_id is already recorded in state.
+func resourceSecureWorkloadEnforceStateUpgradeV1(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+	id, _ := rawState["id"].(string)
+	workspaceId, _ := rawState["workspace_id"].(string)
+
+	if workspaceId != "" && workspaceId != id {
+		rawState["id"] = workspaceId
+	}
+	return rawState, nil
+}
 
 // resolveEnforceVersion determines which policy version should be enforced based on
 // the resource configuration: an explicit `version` wins, otherwise
