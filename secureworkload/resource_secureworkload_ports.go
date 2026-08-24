@@ -94,32 +94,43 @@ func resourceSecureWorkloadPortCreate(d *schema.ResourceData, meta interface{}) 
 	return nil
 }
 
-// func resourceSecureWorkloadPortRead(d *schema.ResourceData, meta interface{}) error {
-// 	client := meta.(Client)
-// 	port, err := client.DescribePort(d.Get("policy_id").(string), d.Id())
-// 	if err != nil {
-// 		return err
-// 	}
-// 	d.Set("start_port", port.StartPort)
-// 	d.Set("end_port", port.EndPort)
-// 	d.Set("version", port.Version)
-// 	d.Set("description", port.Description)
-// 	d.Set("proto", port.Proto)
-// 	return nil
-// }
-
 func resourceSecureWorkloadPortRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(Client)
-	policy, err := client.DescribePolicy(d.Get("policy_id").(string))
+	policyId := d.Get("policy_id").(string)
+	policy, err := client.DescribePolicyL4Params(policyId)
 	if err != nil {
 		return err
 	}
-	d.Set("consumer_filter_id", policy.ConsumerId)
-	d.Set("provider_filter_id", policy.ProviderId)
-	d.Set("version", policy.Version)
-	d.Set("rank", policy.Rank)
-	d.Set("policy_action", policy.Action)
-	d.Set("priority", policy.Priority)
+
+	var found bool
+	var port Port
+	for i := range policy.L4Params {
+		if policy.L4Params[i].Id == d.Id() {
+			port = policy.L4Params[i]
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		// The l4_param no longer exists (e.g. deleted out of band).
+		// Signal to Terraform that the resource is gone so it can be
+		// recreated on the next apply.
+		d.SetId("")
+		return nil
+	}
+
+	// The API returns the range as "port": [start, end] rather than
+	// start_port/end_port, so backfill before writing to state.
+	port.normalize()
+
+	d.Set("start_port", port.StartPort)
+	d.Set("end_port", port.EndPort)
+	d.Set("description", port.Description)
+	d.Set("proto", port.Proto)
+	if port.Version != "" {
+		d.Set("version", port.Version)
+	}
 	return nil
 }
 
