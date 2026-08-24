@@ -145,6 +145,37 @@ func (c Client) CreateApplication(params CreateApplicationRequest) (Application,
 	return application, err
 }
 
+// UpdateApplicationRequest wraps parameters for making a request to update an application
+// in place via PUT /openapi/v1/applications/{id}. Only name, description and primary are
+// updatable via this endpoint (update_application_request_body has additionalProperties: false);
+// all other fields (app_scope_id, clusters, filters, policies, catch_all_action) are immutable
+// through this call and remain ForceNew on the resource.
+type UpdateApplicationRequest struct {
+	// (Optional) User-specified name for the application.
+	Name string `json:"name,omitempty"`
+	// (Optional) User-specified description of the application.
+	Description string `json:"description,omitempty"`
+	// (Optional) Set to true to indicate this application is primary for the given scope.
+	// A pointer is used (instead of a plain bool) so that omitempty can distinguish
+	// "not changing primary" (nil) from "explicitly setting primary=false" (*false).
+	// The API enforces one primary application per scope and returns HTTP 422 if this
+	// would create a conflict.
+	Primary *bool `json:"primary,omitempty"`
+}
+
+// UpdateApplication updates an existing application in place with the
+// specified params, returning the updated application and error (if any).
+func (c Client) UpdateApplication(params UpdateApplicationRequest, applicationId string) (Application, error) {
+	var application Application
+	url := c.Config.APIURL + ApplicationsAPIV1BasePath + fmt.Sprintf("/%s", applicationId)
+	request, err := signer.CreateJSONRequest(http.MethodPut, url, params)
+	if err != nil {
+		return application, err
+	}
+	err = c.Do(request, &application)
+	return application, err
+}
+
 // DescribeApplicationRequest wraps parameters for making a request to describe a application.
 type DescribeApplicationRequest struct {
 	ApplicationId string
