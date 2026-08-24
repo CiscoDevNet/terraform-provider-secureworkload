@@ -1,6 +1,7 @@
 package secureworkload
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -109,10 +110,11 @@ func resourceSecureWorkloadScope() *schema.Resource {
 				Description: "Used to sort application priorities; default is last.",
 			},
 			"short_query": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				ForceNew:    true,
-				Description: "JSON object representation of an inventory filter query. The query shown in the above example is 'orchestrator_system/name containes Random and Address = 10.0.1.1 or CVE Score v3 >2'.Operator can any of the following: [and, or, eq, subnet, contains, regex, gt, gte, lt, lte, in, range, ranges, not, all, none] ",
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: jsonQueryDiffSuppress,
+				Description:      "JSON object representation of an inventory filter query. The query shown in the above example is 'orchestrator_system/name containes Random and Address = 10.0.1.1 or CVE Score v3 >2'.Operator can any of the following: [and, or, eq, subnet, contains, regex, gt, gte, lt, lte, in, range, ranges, not, all, none] ",
 			},
 			"name": {
 				Type:        schema.TypeString,
@@ -196,9 +198,14 @@ func resourceSecureWorkloadScopeRead(d *schema.ResourceData, meta interface{}) e
 	client := meta.(Client)
 	scope, err := client.DescribeScope(d.Id())
 	if err != nil {
+		if IsNotFound(err) {
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 	d.Set("short_name", scope.ShortName)
+	d.Set("sub_type", scope.FilterType)
 	d.Set("description", scope.Description)
 	d.Set("parent_app_scope_id", scope.ParentAppScopeId)
 	d.Set("policy_priority", scope.PolicyPriority)
@@ -211,9 +218,22 @@ func resourceSecureWorkloadScopeRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("child_app_scope_ids", scope.ChildAppScopeIds)
 	d.Set("created_at", scope.CreatedAt)
 	d.Set("updated_at", scope.UpdatedAt)
+	if queryBytes, err := json.Marshal(scope.ShortQuery); err == nil {
+		d.Set("short_query", string(queryBytes))
+	}
 	return nil
 }
 
+// NOTE: this Update is destructive — it deletes the scope and recreates
+// it, ignoring the delete error, which loses the scope entirely if the
+// subsequent create fails. It is left as-is here deliberately.
+//
+// The API does support a real in-place update via
+// PUT /openapi/v1/app_scopes/{id} (update_app_scope_request_body accepts
+// short_name, description, short_query, appliance_id and
+// parent_app_scope_id), but the client in this package has no UpdateScope
+// method. PR #39 adds exactly that and rewrites this function to use it,
+// so fixing it here would duplicate and conflict with that work.
 func resourceSecureWorkloadScopeUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(Client)
 	client.DeleteScope(d.Id())
@@ -234,6 +254,17 @@ func resourceSecureWorkloadScopeUpdate(d *schema.ResourceData, meta interface{})
 	d.SetId(scope.Id)
 	return nil
 }
+
+// NOTE: resourceSecureWorkloadScopeUpdate previously existed here but was
+// removed as part of the #36 fix. It implemented "update" by deleting the
+// existing scope (ignoring the delete error) and recreating it with a new
+// id -- a silently destructive operation that could permanently lose the
+// scope if the subsequent create failed, and that never surfaced as a
+// planned replace in `terraform plan`. There is no PUT/PATCH endpoint for
+// scopes in secureworkload_scopes.go, so honest behavior is to mark the
+// previously-"updatable" fields (description, policy_priority) ForceNew
+// and let Terraform perform a normal, visible destroy+create replacement
+// instead of a hidden one.
 
 func resourceSecureWorkloadScopeDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(Client)
