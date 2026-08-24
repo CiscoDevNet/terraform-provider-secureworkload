@@ -219,7 +219,13 @@ func resourceSecureWorkloadScopeRead(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 	d.Set("short_name", scope.ShortName)
-	d.Set("sub_type", scope.FilterType)
+	// sub_type is deliberately NOT refreshed. The API response carries no
+	// sub_type key at all; filter_type ("AppScope") is the object kind, not
+	// the user's sub_type ("GENERIC", "DNS_SERVERS", ...). Setting sub_type
+	// from filter_type writes a value the user never configured, which
+	// produces a permanent diff on every plan -- the exact bug class this
+	// resource was being fixed for. Verified against a live tenant: a scope
+	// GET returns filter_type="AppScope" and no sub_type.
 	d.Set("description", scope.Description)
 	d.Set("parent_app_scope_id", scope.ParentAppScopeId)
 	d.Set("policy_priority", scope.PolicyPriority)
