@@ -42,7 +42,7 @@ func resourceSecureWorkloadLabel() *schema.Resource {
 			"root_scope_name": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "",
+				Computed:    true,
 				ForceNew:    true,
 				Description: "SecureWorkload root app scope name.",
 			},
@@ -106,6 +106,10 @@ func resourceSecureWorkloadTagRead(d *schema.ResourceData, meta interface{}) err
 	attributes := make(map[string]string)
 	err := client.DescribeTag(describeTagRequest, &attributes)
 	if err != nil {
+		if IsNotFound(err) {
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 	d.Set("root_scope_name", describeTagRequest.RootAppScopeName)

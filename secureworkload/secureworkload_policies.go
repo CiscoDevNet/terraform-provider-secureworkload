@@ -19,8 +19,14 @@ type Policies struct {
 	ProviderId string `json:"provider_filter_id"`
 	Version    string `json:"version,omitempty"`
 	Rank       string `json:"rank,omitempty"`
-	Action     string `json:"policy_action"`
-	Priority   int    `json:"priority,omitempty"`
+	// NOTE: the API ACCEPTS "policy_action" on create (see
+	// CreatePolicyRequest) but RETURNS the field as "action". Decoding
+	// this as "policy_action" left Action empty on every read, so Read
+	// wrote "" into the required, ForceNew policy_action attribute and
+	// Terraform planned a replacement on every single run. That was the
+	// core cause of issue #36.
+	Action   string `json:"action"`
+	Priority int    `json:"priority,omitempty"`
 }
 
 type CreatePolicyRequest struct {

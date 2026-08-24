@@ -128,11 +128,23 @@ func resourceSecureWorkloadRoleRead(d *schema.ResourceData, meta interface{}) er
 	client := meta.(Client)
 	role, err := client.GetRole(d.Id())
 	if err != nil {
+		if IsNotFound(err) {
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 	d.Set("app_scope_id", role.AppScopeId)
 	d.Set("name", role.Name)
 	d.Set("description", role.Description)
+	// NOTE: access_app_scope_id, access_type, and user_ids cannot be
+	// refreshed here. The Role struct (secureworkload_roles.go) returned
+	// by GetRole only carries Id, AppScopeId, Name, and Description --
+	// it does not include the scoped-ability (access_app_scope_id /
+	// access_type) or assigned-users data, so there is no field to read
+	// them from without inventing an API response shape that doesn't
+	// exist. These remain ForceNew/Computed so a user-driven change to
+	// them still triggers a correct (if unrefreshed) replace.
 	return nil
 }
 func resourceSecureWorkloadRoleDelete(d *schema.ResourceData, meta interface{}) error {
