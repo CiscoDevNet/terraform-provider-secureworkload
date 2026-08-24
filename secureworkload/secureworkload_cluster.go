@@ -25,6 +25,12 @@ type Clusters struct {
 	Query map[string]interface{}
 
 	QueryJSON json.RawMessage `json:"query,omitempty"`
+
+	// ShortQueryJSON is the query as the user supplied it. The API also
+	// returns "query", which is the effective query expanded with the
+	// parent scope's filters (a vrf_id clause wrapped in an "and"). Only
+	// short_query can round-trip against the configuration.
+	ShortQueryJSON json.RawMessage `json:"short_query,omitempty"`
 }
 
 type CreateClusterRequest struct {
