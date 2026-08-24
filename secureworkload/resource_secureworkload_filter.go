@@ -129,7 +129,14 @@ func resourceSecureWorkloadFilterRead(d *schema.ResourceData, meta interface{}) 
 	d.Set("app_scope_id", filter.AppScopeId)
 	d.Set("primary", filter.Primary)
 	d.Set("public", filter.Public)
-	if queryBytes, err := json.Marshal(filter.Query); err == nil {
+	// Refresh from short_query, NOT query. The API returns both: "query" is
+	// the effective query, expanded with the parent scope's filters (it has
+	// a vrf_id clause injected and is wrapped in an "and"), while
+	// "short_query" is the query the user actually supplied. Setting the
+	// expanded form here can never match the configuration, and because
+	// query is Required+ForceNew that means a destroy/recreate on every
+	// single plan.
+	if queryBytes, err := json.Marshal(filter.ShortQuery); err == nil {
 		d.Set("query", string(queryBytes))
 	}
 	return nil
