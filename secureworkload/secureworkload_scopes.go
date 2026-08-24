@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	ScopesAPIV1BasePath = fmt.Sprintf("%s/app_scopes", SecureWorkloadAPIV1BasePath)
+	ScopesAPIV1BasePath  = fmt.Sprintf("%s/app_scopes", SecureWorkloadAPIV1BasePath)
+	CommitDirtyAPIV1Path = fmt.Sprintf("%s/commit_dirty", ScopesAPIV1BasePath)
 )
 
 // ScopeQuery wraps a Filter (or match criteria) associated
@@ -63,6 +64,7 @@ type Scope struct {
 	ChildAppScopeIds []string   `json:"child_app_scope_ids"`
 	CreatedAt        int64      `json:"created_at"`
 	UpdatedAt        int64      `json:"updated_at"`
+	CommitDirty      bool       `json:"sync"`
 }
 
 // ShortQuery wraps a query used as part of the request to create a scope
@@ -89,6 +91,23 @@ type CreateScopeRequest struct {
 	PolicyPriority int `json:"policy_priority,omitempty"`
 }
 
+// UpdateScopeRequest wraps parameters for making a request
+// to update a scope
+type UpdateScopeRequest struct {
+	SubType string `json:"sub_type,omitempty"`
+	// User-specified description of the scope.
+	Description string `json:"description"`
+	// Filter (or match criteria) associated with the scope.
+	ShortQuery json.RawMessage `json:"short_query,omitempty"`
+	// Used to sort application priorities; default is last.
+	PolicyPriority int `json:"policy_priority,omitempty"`
+}
+
+type CommitDirtyScopeRequest struct {
+	ParentAppScopeId string `json:"root_app_scope_id"`
+	Sync             bool   `json:"sync"`
+}
+
 func (c Client) GetScopeByParam(getUrl string) ([]GetScope, error) {
 	var scope []GetScope
 	url := c.Config.APIURL + ScopesAPIV1BasePath + getUrl
@@ -106,6 +125,19 @@ func (c Client) CreateScope(params CreateScopeRequest) (Scope, error) {
 	var scope Scope
 	url := c.Config.APIURL + ScopesAPIV1BasePath
 	request, err := signer.CreateJSONRequest(http.MethodPost, url, params)
+	if err != nil {
+		return scope, err
+	}
+	err = c.Do(request, &scope)
+	return scope, err
+}
+
+// UpdateScope creates a scope with the specified params,
+// returning the created scope and error (if any).
+func (c Client) UpdateScope(params UpdateScopeRequest, scopeId string) (Scope, error) {
+	var scope Scope
+	url := c.Config.APIURL + ScopesAPIV1BasePath + fmt.Sprintf("/%s", scopeId)
+	request, err := signer.CreateJSONRequest(http.MethodPut, url, params)
 	if err != nil {
 		return scope, err
 	}
@@ -148,4 +180,17 @@ func (c Client) ListScopes() ([]Scope, error) {
 	}
 	err = c.Do(request, &scopes)
 	return scopes, err
+}
+
+// CommitDirtyScope allows for dirty scopes to be
+// committed to the scope tree immediately
+func (c Client) CommitDirtyScope(params CommitDirtyScopeRequest) (Scope, error) {
+	var scope Scope
+	url := c.Config.APIURL + CommitDirtyAPIV1Path
+	request, err := signer.CreateJSONRequest(http.MethodPost, url, params)
+	if err != nil {
+		return scope, err
+	}
+	err = c.Do(request, &scope)
+	return scope, err
 }

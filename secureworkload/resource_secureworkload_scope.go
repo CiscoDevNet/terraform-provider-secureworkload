@@ -85,7 +85,7 @@ func resourceSecureWorkloadScope() *schema.Resource {
 			"sub_type": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew:    true,
+				ForceNew:    false,
 				Description: "User-specified sub type for the scope.",
 			},
 			"description": {
@@ -111,7 +111,7 @@ func resourceSecureWorkloadScope() *schema.Resource {
 			"short_query": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew:    true,
+				ForceNew:    false,
 				Description: "JSON object representation of an inventory filter query. The query shown in the above example is 'orchestrator_system/name containes Random and Address = 10.0.1.1 or CVE Score v3 >2'.Operator can any of the following: [and, or, eq, subnet, contains, regex, gt, gte, lt, lte, in, range, ranges, not, all, none] ",
 			},
 			"name": {
@@ -160,6 +160,12 @@ func resourceSecureWorkloadScope() *schema.Resource {
 				Type:        schema.TypeInt,
 				Computed:    true,
 				Description: "Unix Epoch timestamp when scope was last updated.",
+			},
+			"commit_on_update": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Whether to commit the scope changes on update.",
 			},
 		},
 	}
@@ -216,19 +222,33 @@ func resourceSecureWorkloadScopeRead(d *schema.ResourceData, meta interface{}) e
 
 func resourceSecureWorkloadScopeUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(Client)
-	client.DeleteScope(d.Id())
-	createScopeParams := CreateScopeRequest{
-		ShortName:        d.Get("short_name").(string),
-		Description:      d.Get("description").(string),
-		ParentAppScopeId: d.Get("parent_app_scope_id").(string),
-		ShortQuery:       []byte(d.Get("short_query").(string)),
-		SubType:          d.Get("sub_type").(string),
-		PolicyPriority:   d.Get("policy_priority").(int),
+	updateScopeParams := UpdateScopeRequest{
+		SubType:        d.Get("sub_type").(string),
+		Description:    d.Get("description").(string),
+		ShortQuery:     []byte(d.Get("short_query").(string)),
+		PolicyPriority: d.Get("policy_priority").(int),
 	}
-	scope, err := client.CreateScope(createScopeParams)
+
+	scope, err := client.UpdateScope(updateScopeParams, d.Id())
+
 	if err != nil {
 		return err
 	}
+	if d.Get("commit_on_update").(bool) {
+		commitDirtyScopeParams := CommitDirtyScopeRequest{
+			ParentAppScopeId: d.Get("root_app_scope_id").(string),
+			Sync:             true,
+		}
+
+		scope, err := client.CommitDirtyScope(commitDirtyScopeParams)
+
+		if err != nil {
+			return err
+		}
+
+		d.Set("sync", scope.CommitDirty)
+	}
+	d.Set("short_query", scope.ShortQuery)
 	d.Set("description", scope.Description)
 	d.Set("policy_priority", scope.PolicyPriority)
 	d.SetId(scope.Id)

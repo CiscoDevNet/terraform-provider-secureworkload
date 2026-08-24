@@ -6,54 +6,56 @@ description: |-
   Resource for creating a scope in Secure Workload
   Example
   An example is shown below:
-  ```hcl
-  resource "secureworkloadscope" "scope" {
-      shortname = "Terraform-created-scope"
-      subtype = "DNSSERVERS"
-      shortquery = file("${path.module}/queryfile.json")
-       parentappscopeid = data.secureworkloadscope.scope.id
-  }
-  resource "secureworkloadscope" "scope2" {
-      shortname = "Terraform-created-scope2"
-      query = <<EOF
-                  {
-                   "type":"subnet",
-                   "field": "ip",
-                   "value": "10.0.1.0/24"
-                   }
-              EOF
-      subtype = "GENERIC"
-       parentappscopeid = data.secureworkloadscope.scope.id
+  
+  resource "secureworkload_scope" "scope" {
+      short_name = "Terraform-created-scope"
+      sub_type = "DNS_SERVERS"
+      short_query = file("${path.module}/query_file.json") 
+  	 parent_app_scope_id = data.secureworkload_scope.scope.id
   }
   
-  Example of **query_file.json**
-  json
-  {    "type": "or",
-      "filters": [
-        {
-      "type": "and",
-          "filters": [
-            {
-              "type": "contains",
-              "field": "userorchestratorsystem/name",
-              "value": "Random"
-            },
-            {
-              "type": "eq",
-              "field": "ip",
-              "value": "10.0.1.1"
-            }
-          ]
-        },
-        {
-          "type": "gt",
-          "field": "hosttagscvss",
-          "value": 2
-        }
-      ]
+  resource "secureworkload_scope" "scope2" {
+      short_name = "Terraform-created-scope2"
+      short_query = <<EOF
+                  { 
+          		 "type":"subnet",
+          		 "field": "ip",
+          		 "value": "10.0.1.0/24"
+          		 }
+          	EOF
+      sub_type = "GENERIC"
+  	 parent_app_scope_id = data.secureworkload_scope.scope.id
+  }
+  
+  Example of query_file.json
+  
+  {	
+  	"type": "or",
+  	"filters": [ 
+  	  {
+  	"type": "and",
+  		"filters": [ 
+  		  { 
+  			"type": "contains",
+  			"field": "user_orchestrator_system/name",
+  			"value": "Random"
+  		  },
+  		  {
+  			"type": "eq",
+  			"field": "ip",
+  			"value": "10.0.1.1"
+  		  }
+  		]
+  	  },
+  	  {
+  		"type": "gt",
+  		"field": "host_tags_cvss",
+  		"value": 2
+  	  }
+  	]
     }
-  ``
-  **Note:** If creating multiple resources for scope during a singleterraform apply, you may have to usedependson` to chain the resources so that terraform creates it in the same order that you intended.
+  
+  Note: If creating multiple resources for scope during a single terraform apply, you may have to use depends_on to chain the resources so that terraform creates it in the same order that you intended.
 ---
 
 # secureworkload_scope (Resource)
@@ -72,7 +74,7 @@ resource "secureworkload_scope" "scope" {
 
 resource "secureworkload_scope" "scope2" {
     short_name = "Terraform-created-scope2"
-    query = <<EOF
+    short_query = <<EOF
                 { 
         		 "type":"subnet",
         		 "field": "ip",
@@ -125,6 +127,7 @@ Example of **query_file.json**
 
 ### Optional
 
+- `commit_on_update` (Boolean) Whether to commit the scope changes on update.
 - `description` (String) User-specified description of the scope.
 - `policy_priority` (Number) Used to sort application priorities; default is last.
 - `short_query` (String) JSON object representation of an inventory filter query. The query shown in the above example is 'orchestrator_system/name containes Random and Address = 10.0.1.1 or CVE Score v3 >2'.Operator can any of the following: [and, or, eq, subnet, contains, regex, gt, gte, lt, lte, in, range, ranges, not, all, none]
@@ -142,5 +145,3 @@ Example of **query_file.json**
 - `short_priority` (Number) Used to sort application priorities; default is last.
 - `updated_at` (Number) Unix Epoch timestamp when scope was last updated.
 - `vrf_id` (Number) ID of the VRF to which scope belongs.
-
-
