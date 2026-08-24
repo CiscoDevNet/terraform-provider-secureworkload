@@ -153,8 +153,16 @@ func resourceSecureWorkloadClusterRead(d *schema.ResourceData, meta interface{})
 	d.Set("version", cluster.Version)
 	d.Set("description", cluster.Description)
 	d.Set("approved", cluster.Approved)
-	if queryBytes, err := json.Marshal(cluster.Query); err == nil {
-		d.Set("query", string(queryBytes))
+	// Refresh from short_query, NOT query. The API returns both: "query" is
+	// the effective query, expanded with the parent scope's filters (it has
+	// a vrf_id clause injected and is wrapped in an "and"), while
+	// "short_query" is the query the user actually supplied. Setting the
+	// expanded form here can never match the configuration, and because
+	// query is ForceNew that means a destroy/recreate on every plan.
+	// If the API did not return short_query, leave the stored value alone
+	// rather than overwriting it with something that cannot round-trip.
+	if len(cluster.ShortQueryJSON) > 0 {
+		d.Set("query", string(cluster.ShortQueryJSON))
 	}
 	// NOTE: workspace_id is intentionally not refreshed here. The
 	// Clusters struct (secureworkload_cluster.go) returned by
