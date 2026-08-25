@@ -1,6 +1,7 @@
 package secureworkload
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -49,6 +50,41 @@ func isNotModified(err error) bool {
 	return false
 }
 
+// isAlreadyEnforced reports whether err is the API's way of saying the
+// requested version is already the enforced one, e.g.
+//
+//	400  {"error": "version p76 is already enforced", "status": "bad_request"}
+//
+// enable_enforce is idempotent in intent: if the requested version is
+// already live, the desired end state is satisfied and there is nothing to
+// do. Without this, adopting a workspace that is already enforcing is
+// impossible, because Create (and Update, when track_latest_version
+// resolves to the version already enforced) fails outright.
+//
+// The match is deliberately narrow: a 400 alone is NOT enough, since a bad
+// version string or a malformed body also returns 400 and those must keep
+// failing. Only a 400 whose body actually says "already enforced" is
+// treated as success.
+//
+// Caveat: this matches on the API's error text, so a future rewording by
+// Cisco would silently stop it matching. That fails safe (an error, not
+// silent corruption) but it is not robust, and a dedicated
+// "get enforcement status" endpoint would be a better long-term answer.
+func isAlreadyEnforced(err error) bool {
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		return false
+	}
+	if apiErr.StatusCode != http.StatusBadRequest {
+		return false
+	}
+	body, mErr := json.Marshal(apiErr.Body)
+	if mErr != nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(string(body)), "already enforced")
+}
+
 func (c Client) CreateEnforce(params CreateEnforceRequest, workspace_id string) (Enforce, error) {
 	var enforce Enforce
 	url := c.Config.APIURL + EnforceAPIV1BasePath + workspace_id + "/enable_enforce"
@@ -57,8 +93,11 @@ func (c Client) CreateEnforce(params CreateEnforceRequest, workspace_id string) 
 		return enforce, err
 	}
 	err = c.Do(request, &enforce)
-	if err != nil && isNotModified(err) {
+	if err != nil && (isNotModified(err) || isAlreadyEnforced(err)) {
 		// Already enforced at the requested version -- treat as success.
+		// 304 covers the "no version supplied" path; 400 "already
+		// enforced" covers the explicit-version path that
+		// track_latest_version takes.
 		return enforce, nil
 	}
 	return enforce, err
