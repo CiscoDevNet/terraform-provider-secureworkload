@@ -31,7 +31,7 @@ func resourceSecureWorkloadRole() *schema.Resource {
 			"```\n" +
 			"**Note:** If creating multiple resources for role during a single `terraform apply`, you may have to use `depends_on` to chain the resources so that terraform creates it in the same order that you intended.\n",
 		Create: resourceSecureWorkloadRoleCreate,
-		Update: nil,
+		Update: resourceSecureWorkloadRoleUpdate,
 		Read:   resourceSecureWorkloadRoleRead,
 		Delete: resourceSecureWorkloadRoleDelete,
 
@@ -48,7 +48,6 @@ func resourceSecureWorkloadRole() *schema.Resource {
 			"description": {
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 				Description: "The role's description",
 			},
 			"access_app_scope_id": {
@@ -122,6 +121,31 @@ func resourceSecureWorkloadRoleCreate(d *schema.ResourceData, meta interface{}) 
 	}
 	d.SetId(response.RoleId)
 	return nil
+}
+
+func resourceSecureWorkloadRoleUpdate(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(Client)
+
+	hasNameChange := d.HasChange("name")
+	hasDescriptionChange := d.HasChange("description")
+	if !hasNameChange && !hasDescriptionChange {
+		return resourceSecureWorkloadRoleRead(d, meta)
+	}
+
+	updateRoleParams := UpdateRoleRequest{}
+	if hasNameChange {
+		updateRoleParams.Name = d.Get("name").(string)
+	}
+	if hasDescriptionChange {
+		updateRoleParams.Description = d.Get("description").(string)
+	}
+
+	_, err := client.UpdateRole(updateRoleParams, d.Id())
+	if err != nil {
+		return err
+	}
+
+	return resourceSecureWorkloadRoleRead(d, meta)
 }
 
 func resourceSecureWorkloadRoleRead(d *schema.ResourceData, meta interface{}) error {

@@ -83,6 +83,7 @@ func resourceSecureWorkloadCluster() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
+				ForceNew:    true,
 				Description: "Indicates the version of the workspace the cluster will be added to.",
 			},
 			"description": {

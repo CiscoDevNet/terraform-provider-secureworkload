@@ -112,6 +112,28 @@ func (c Client) GetRole(roleId string) (Role, error) {
 	return role, err
 }
 
+// UpdateRoleRequest wraps the parameters accepted by the update_role_request_body
+// schema (name, description) for making a request to update a role.
+type UpdateRoleRequest struct {
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+// UpdateRole updates a role's name and/or description by id, returning the
+// updated role and error (if any).
+func (c Client) UpdateRole(params UpdateRoleRequest, roleId string) (Role, error) {
+	var role Role
+	url := fmt.Sprintf("%s%s/%s", c.Config.APIURL, RolesAPIV1BasePath, roleId)
+
+	request, err := signer.CreateJSONRequest(http.MethodPut, url, params)
+	if err != nil {
+		return role, err
+	}
+
+	err = c.Do(request, &role)
+	return role, err
+}
+
 // GiveScopeAccessToRoleRequest wraps the parameters to
 // make a request to give scope access to a role
 type GiveScopeAccessToRoleRequest struct {
