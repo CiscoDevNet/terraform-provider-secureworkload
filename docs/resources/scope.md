@@ -129,7 +129,7 @@ Example of **query_file.json**
 
 - `commit_on_update` (Boolean) Whether to commit the scope changes on update.
 - `description` (String) User-specified description of the scope.
-- `policy_priority` (Number) Used to sort application priorities; default is last.
+- `policy_priority` (Number) Used to sort application priorities; default is last. Changing this value forces a new scope to be created, as the API does not support updating it on an existing scope.
 - `short_query` (String) JSON object representation of an inventory filter query. The query shown in the above example is 'orchestrator_system/name containes Random and Address = 10.0.1.1 or CVE Score v3 >2'.Operator can any of the following: [and, or, eq, subnet, contains, regex, gt, gte, lt, lte, in, range, ranges, not, all, none]
 - `sub_type` (String) User-specified sub type for the scope.
 

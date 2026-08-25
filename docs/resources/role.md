@@ -45,11 +45,11 @@ resource "secureworkload_role" "role1" {
 - `access_app_scope_id` (String) The scope to which this role will be given access
 - `access_type` (String) The type of access to grant the role to the "access_app_scope_id" scope.\n Valid values are SCOPE_READ", "SCOPE_WRITE", "EXECUTE", "ENFORCE", "SCOPE_OWNER", "DEVELOPER"
 - `app_scope_id` (String) The scope in which this role will be created
-- `description` (String) The role's description
+- `description` (String) The role's description. Can be changed on an existing role.
 
 ### Optional
 
-- `name` (String) (Optional) User-specified name for the role.
+- `name` (String) (Optional) User-specified name for the role. Can be changed on an existing role.
 - `user_ids` (Set of String) The users to which this role will be assigned
 
 ### Read-Only

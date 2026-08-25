@@ -60,8 +60,8 @@ resource.
 
 ### Optional
 
-- `version` (String) The policy version to enforce, in the form "p10". If omitted and `track_latest_version` is `true`, the newest available policy version is enforced and this attribute tracks it automatically on every `terraform apply`. Changing this value now updates the enforcement in place instead of destroying and recreating the resource.
-- `track_latest_version` (Boolean) When `true`, always enforce the newest available policy version for the workspace on every `terraform apply`, without needing to know or input the version. Defaults to `false`.
+- `version` (String) The policy version to enforce, for example "p10". If left empty, the latest policies of the workspace are enforced. Changing this value re-enforces the workspace in place instead of destroying and recreating the resource.
+- `track_latest_version` (Boolean) When set to `true`, the newest policy version of the workspace is enforced on each `terraform apply`, so you do not have to set `version` yourself. Defaults to `false`.
 
 ### Read-Only
 
