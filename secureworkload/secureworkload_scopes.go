@@ -45,6 +45,10 @@ type Scope struct {
 	Description string `json:"description"`
 	// User-specified name for the scope.
 	ShortName string `json:"short_name"`
+	// User-specified sub type for the scope (e.g. "DNS_SERVERS", "SCANNERS").
+	// The API only returns this key when a sub_type has actually been set
+	// on the scope; it is omitted entirely for scopes created without one.
+	SubType string `json:"sub_type,omitempty"`
 	// Filter (or match criteria) associated with the scope in conjunction with the filters of the parent scopes (all the way to the root scope).
 	Query ScopeQuery `json:"query"`
 	// Filter (or match criteria) associated with the scope.

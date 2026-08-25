@@ -2,6 +2,7 @@ package secureworkload
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -37,6 +38,18 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("SECUREWORKLOAD_DISABLE_TLS_VERIFICATION", false),
 				Description: "Allow connections to SecureWorkload endpoints without validating their TLS certificate.",
 			},
+			"max_retries": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("SECUREWORKLOAD_MAX_RETRIES", DefaultMaxRetries),
+				Description: "Maximum number of total attempts (including the initial request) made for a SecureWorkload API call that receives a 429 (Too Many Requests) or transient server error response, with exponential backoff between attempts.",
+			},
+			"http_timeout": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("SECUREWORKLOAD_HTTP_TIMEOUT", int(DefaultHTTPTimeout/time.Second)),
+				Description: "Per-HTTP-request timeout, in seconds, applied to each SecureWorkload API call attempt. This guards against a request hanging indefinitely when the tenant is silently throttling (i.e. stalling the connection rather than returning an explicit 429); once the timeout elapses the attempt fails and is retried with backoff like any other transient error.",
+			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"secureworkload_filter":    resourceSecureWorkloadFilter(),
@@ -67,6 +80,8 @@ func configureClient(d *schema.ResourceData) (interface{}, error) {
 		APISecret:              d.Get("api_secret").(string),
 		APIURL:                 d.Get("api_url").(string),
 		DisableTLSVerification: d.Get("disable_tls_verification").(bool),
+		MaxRetries:             d.Get("max_retries").(int),
+		HTTPTimeout:            time.Duration(d.Get("http_timeout").(int)) * time.Second,
 	}
 	if err := validate(config); err != nil {
 		return nil, err

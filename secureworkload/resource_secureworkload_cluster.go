@@ -1,11 +1,33 @@
 package secureworkload
 
 import (
+	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	// client "github.com/secureworkload-exchange/terraform-go-sdk"
 )
+
+// jsonQueryDiffSuppress compares two JSON documents for semantic equality
+// (ignoring key ordering / whitespace differences) so that a server-side
+// re-serialization of a user-supplied query does not produce a permanent
+// diff on plan. Used for query-like attributes (e.g. "query", "short_query")
+// that are stored as raw JSON strings but round-trip through a server that
+// may reformat them.
+func jsonQueryDiffSuppress(k, oldValue, newValue string, d *schema.ResourceData) bool {
+	if oldValue == newValue {
+		return true
+	}
+	var oldParsed, newParsed interface{}
+	if err := json.Unmarshal([]byte(oldValue), &oldParsed); err != nil {
+		return false
+	}
+	if err := json.Unmarshal([]byte(newValue), &newParsed); err != nil {
+		return false
+	}
+	return reflect.DeepEqual(oldParsed, newParsed)
+}
 
 func resourceSecureWorkloadCluster() *schema.Resource {
 	return &schema.Resource{
@@ -60,6 +82,7 @@ func resourceSecureWorkloadCluster() *schema.Resource {
 			"version": {
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 				ForceNew:    true,
 				Description: "Indicates the version of the workspace the cluster will be added to.",
 			},
@@ -70,10 +93,11 @@ func resourceSecureWorkloadCluster() *schema.Resource {
 				Description: "(optional) The description of the cluster.",
 			},
 			"query": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				ForceNew:    true,
-				Description: "JSON object representation of an inventory filter query. *type* is operator, *field* is label key & *value* is label value. Operator can any of the following: [and, or, eq, subnet, contains, regex, gt, gte, lt, lte, in, range, ranges, not, all, none]",
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: jsonQueryDiffSuppress,
+				Description:      "JSON object representation of an inventory filter query. *type* is operator, *field* is label key & *value* is label value. Operator can any of the following: [and, or, eq, subnet, contains, regex, gt, gte, lt, lte, in, range, ranges, not, all, none]",
 			},
 			"workspace_id": {
 				Type:        schema.TypeString,
@@ -120,12 +144,32 @@ func resourceSecureWorkloadClusterRead(d *schema.ResourceData, meta interface{})
 	client := meta.(Client)
 	cluster, err := client.DescribeCluster(d.Id())
 	if err != nil {
+		if IsNotFound(err) {
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 	d.Set("name", cluster.Name)
 	d.Set("version", cluster.Version)
 	d.Set("description", cluster.Description)
 	d.Set("approved", cluster.Approved)
+	// Refresh from short_query, NOT query. The API returns both: "query" is
+	// the effective query, expanded with the parent scope's filters (it has
+	// a vrf_id clause injected and is wrapped in an "and"), while
+	// "short_query" is the query the user actually supplied. Setting the
+	// expanded form here can never match the configuration, and because
+	// query is ForceNew that means a destroy/recreate on every plan.
+	// If the API did not return short_query, leave the stored value alone
+	// rather than overwriting it with something that cannot round-trip.
+	if len(cluster.ShortQueryJSON) > 0 {
+		d.Set("query", string(cluster.ShortQueryJSON))
+	}
+	// NOTE: workspace_id is intentionally not refreshed here. The
+	// Clusters struct (secureworkload_cluster.go) returned by
+	// DescribeCluster does not carry a workspace/application id field,
+	// so there is nothing to set it from without inventing an API
+	// response field that doesn't exist.
 	return nil
 }
 

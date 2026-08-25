@@ -1,6 +1,7 @@
 package secureworkload
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -59,10 +60,11 @@ func resourceSecureWorkloadFilter() *schema.Resource {
 				Description: "User-specified name for the inventory filter.",
 			},
 			"query": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "JSON object representation of an inventory filter query. *type* is operator, *field* is label key & *value* is label value. Operator can any of the following: [and, or, eq, subnet, contains, regex, gt, gte, lt, lte, in, range, ranges, not, all, none]",
+				Type:             schema.TypeString,
+				Required:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: jsonQueryDiffSuppress,
+				Description:      "JSON object representation of an inventory filter query. *type* is operator, *field* is label key & *value* is label value. Operator can any of the following: [and, or, eq, subnet, contains, regex, gt, gte, lt, lte, in, range, ranges, not, all, none]",
 			},
 			"app_scope_id": {
 				Type:        schema.TypeString,
@@ -117,12 +119,26 @@ func resourceSecureWorkloadFilterRead(d *schema.ResourceData, meta interface{}) 
 	client := meta.(Client)
 	filter, err := client.DescribeFilter(d.Id())
 	if err != nil {
+		if IsNotFound(err) {
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 	d.Set("name", filter.Name)
 	d.Set("app_scope_id", filter.AppScopeId)
 	d.Set("primary", filter.Primary)
 	d.Set("public", filter.Public)
+	// Refresh from short_query, NOT query. The API returns both: "query" is
+	// the effective query, expanded with the parent scope's filters (it has
+	// a vrf_id clause injected and is wrapped in an "and"), while
+	// "short_query" is the query the user actually supplied. Setting the
+	// expanded form here can never match the configuration, and because
+	// query is Required+ForceNew that means a destroy/recreate on every
+	// single plan.
+	if queryBytes, err := json.Marshal(filter.ShortQuery); err == nil {
+		d.Set("query", string(queryBytes))
+	}
 	return nil
 }
 

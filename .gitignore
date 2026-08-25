@@ -2,3 +2,9 @@
 running.sh
 tfplugindocs 
 logger.go
+
+# Compiled provider binaries produced by `make build` / `make install`.
+# The Makefile writes terraform-provider-secureworkload_<VERSION>_<OS>_<ARCH>
+# into the repo root, which is easy to commit by accident.
+terraform-provider-secureworkload_*
+!terraform-provider-secureworkload_*.go

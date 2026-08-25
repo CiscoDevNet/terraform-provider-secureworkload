@@ -31,7 +31,7 @@ func resourceSecureWorkloadRole() *schema.Resource {
 			"```\n" +
 			"**Note:** If creating multiple resources for role during a single `terraform apply`, you may have to use `depends_on` to chain the resources so that terraform creates it in the same order that you intended.\n",
 		Create: resourceSecureWorkloadRoleCreate,
-		Update: nil,
+		Update: resourceSecureWorkloadRoleUpdate,
 		Read:   resourceSecureWorkloadRoleRead,
 		Delete: resourceSecureWorkloadRoleDelete,
 
@@ -48,7 +48,6 @@ func resourceSecureWorkloadRole() *schema.Resource {
 			"description": {
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 				Description: "The role's description",
 			},
 			"access_app_scope_id": {
@@ -124,15 +123,52 @@ func resourceSecureWorkloadRoleCreate(d *schema.ResourceData, meta interface{}) 
 	return nil
 }
 
+func resourceSecureWorkloadRoleUpdate(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(Client)
+
+	hasNameChange := d.HasChange("name")
+	hasDescriptionChange := d.HasChange("description")
+	if !hasNameChange && !hasDescriptionChange {
+		return resourceSecureWorkloadRoleRead(d, meta)
+	}
+
+	updateRoleParams := UpdateRoleRequest{}
+	if hasNameChange {
+		updateRoleParams.Name = d.Get("name").(string)
+	}
+	if hasDescriptionChange {
+		updateRoleParams.Description = d.Get("description").(string)
+	}
+
+	_, err := client.UpdateRole(updateRoleParams, d.Id())
+	if err != nil {
+		return err
+	}
+
+	return resourceSecureWorkloadRoleRead(d, meta)
+}
+
 func resourceSecureWorkloadRoleRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(Client)
 	role, err := client.GetRole(d.Id())
 	if err != nil {
+		if IsNotFound(err) {
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 	d.Set("app_scope_id", role.AppScopeId)
 	d.Set("name", role.Name)
 	d.Set("description", role.Description)
+	// NOTE: access_app_scope_id, access_type, and user_ids cannot be
+	// refreshed here. The Role struct (secureworkload_roles.go) returned
+	// by GetRole only carries Id, AppScopeId, Name, and Description --
+	// it does not include the scoped-ability (access_app_scope_id /
+	// access_type) or assigned-users data, so there is no field to read
+	// them from without inventing an API response shape that doesn't
+	// exist. These remain ForceNew/Computed so a user-driven change to
+	// them still triggers a correct (if unrefreshed) replace.
 	return nil
 }
 func resourceSecureWorkloadRoleDelete(d *schema.ResourceData, meta interface{}) error {

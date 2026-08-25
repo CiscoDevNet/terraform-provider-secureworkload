@@ -51,12 +51,14 @@ func resourceSecureWorkloadPolicy() *schema.Resource {
 			"version": {
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 				ForceNew:    true,
 				Description: "Indicates the version of the workspace the cluster will be added to.",
 			},
 			"rank": {
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 				ForceNew:    true,
 				Description: "Values can be DEFAULT, ABSOLUTE or CATCHALL for ranking",
 			},
@@ -67,8 +69,13 @@ func resourceSecureWorkloadPolicy() *schema.Resource {
 				Description: "Values can be ALLOW or DENY: means whether we should allow or drop traffic from consumer to provider on the given service port/protocol",
 			},
 			"priority": {
-				Type:        schema.TypeInt,
-				Optional:    true,
+				Type:     schema.TypeInt,
+				Optional: true,
+				// Computed: the API assigns a default priority (100) when
+				// one is not supplied. Without this the server value shows
+				// up as a "100 -> null" diff against a ForceNew attribute
+				// and forces a replacement on every apply (issue #36).
+				Computed:    true,
 				ForceNew:    true,
 				Description: "Used to sort policy.",
 			},
@@ -141,6 +148,10 @@ func resourceSecureWorkloadPolicyRead(d *schema.ResourceData, meta interface{}) 
 	client := meta.(Client)
 	policy, err := client.DescribePolicy(d.Id())
 	if err != nil {
+		if IsNotFound(err) {
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 	d.Set("consumer_filter_id", policy.ConsumerId)
