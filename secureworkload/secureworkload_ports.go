@@ -39,11 +39,44 @@ func (p *Port) normalize() {
 }
 
 type CreatePortRequest struct {
-	StartPort   int    `json:"start_port"`
-	EndPort     int    `json:"end_port"`
+	// StartPort, EndPort, and Proto are pointers so that an unset value
+	// can be omitted from the request body entirely (json:",omitempty" on
+	// a plain int cannot distinguish "unset" from literal 0, and IANA
+	// protocol/port numbers never legitimately use 0 anyway). All three
+	// nil produces a bare "{}" body, which is exactly what CSW requires
+	// to create an ANY service (all protocols, all ports): proto:null and
+	// no "port" key at all. A port range MAY NOT be combined with a nil
+	// proto -- CSW rejects that combination with "ports not enforceable
+	// with wildcard proto" -- so callers must set all three or none.
+	StartPort   *int   `json:"start_port,omitempty"`
+	EndPort     *int   `json:"end_port,omitempty"`
 	Version     string `json:"version,omitempty"`
 	Description string `json:"description,omitempty"`
-	Proto       int    `json:"proto,omitempty"`
+	Proto       *int   `json:"proto,omitempty"`
+}
+
+// optionalIntString formats a *int for error messages, rendering nil as
+// "unset" instead of a confusing zero value.
+func optionalIntString(v *int) string {
+	if v == nil {
+		return "unset"
+	}
+	return fmt.Sprintf("%d", *v)
+}
+
+// isAnyRequest reports whether params describes CSW's ANY service (all
+// protocols, all ports): no start_port, no end_port, and no proto.
+func isAnyRequest(params CreatePortRequest) bool {
+	return params.StartPort == nil && params.EndPort == nil && params.Proto == nil
+}
+
+// isAnyL4Param reports whether an already-normalize()'d l4_param is CSW's
+// ANY service. The API represents ANY with proto:null and no "port" key at
+// all; after JSON decoding that means no PortRange, and Proto/StartPort/
+// EndPort all at their zero value, since IANA protocol/port numbers never
+// legitimately use 0.
+func isAnyL4Param(p Port) bool {
+	return len(p.PortRange) == 0 && p.StartPort == 0 && p.EndPort == 0 && p.Proto == 0
 }
 
 // policyWithL4Params is a decoding-only shape used to capture the parent
@@ -57,18 +90,38 @@ type policyWithL4Params struct {
 }
 
 // findMatchingL4Param looks for the last (newest) entry in l4Params that
-// matches the requested proto/start_port/end_port. Returns the matching
-// Port and true if found.
+// matches the requested proto/start_port/end_port. An ANY request (all
+// three unset) only matches an ANY l4_param (proto:null, no "port" key);
+// a concrete port/proto request only matches a concrete l4_param with the
+// same values. Returns the matching Port and true if found.
 func findMatchingL4Param(l4Params []Port, params CreatePortRequest) (Port, bool) {
 	var match Port
 	found := false
+	wantAny := isAnyRequest(params)
 	for i := range l4Params {
 		p := l4Params[i]
 		p.normalize()
-		if p.StartPort == params.StartPort && p.EndPort == params.EndPort && p.Proto == params.Proto {
-			match = p
-			found = true
+		if wantAny {
+			if isAnyL4Param(p) {
+				match = p
+				found = true
+			}
+			continue
 		}
+		if isAnyL4Param(p) {
+			continue
+		}
+		if params.StartPort != nil && p.StartPort != *params.StartPort {
+			continue
+		}
+		if params.EndPort != nil && p.EndPort != *params.EndPort {
+			continue
+		}
+		if params.Proto != nil && p.Proto != *params.Proto {
+			continue
+		}
+		match = p
+		found = true
 	}
 	return match, found
 }
@@ -102,7 +155,7 @@ func (c Client) CreatePort(params CreatePortRequest, policy_id string) (Port, er
 		return match, nil
 	}
 
-	return port, fmt.Errorf("could not determine the l4_param id for the newly created port (proto=%d, start_port=%d, end_port=%d) on policy %s: no matching entry found in the policy's l4_params", params.Proto, params.StartPort, params.EndPort, policy_id)
+	return port, fmt.Errorf("could not determine the l4_param id for the newly created port (proto=%s, start_port=%s, end_port=%s) on policy %s: no matching entry found in the policy's l4_params", optionalIntString(params.Proto), optionalIntString(params.StartPort), optionalIntString(params.EndPort), policy_id)
 }
 
 // DescribePolicyL4Params fetches the parent policy and returns its raw id

@@ -69,3 +69,16 @@ resource.
 - `enforcement_enabled` (Boolean) Indicates if enforcement is currently enabled on the workspace.
 - `enforced_version` (String) The policy version currently enforced on the workspace, in the form "p10".
 - `latest_version` (String) The newest available policy version for the workspace, in the form "p10".
+
+## Import
+
+Enforcement that is already running on a workspace can be brought under Terraform
+management. The ID is the workspace ID:
+
+```shell
+terraform import secureworkload_enforce.enforced <workspace-id>
+```
+
+Importing only reads the workspace, so the enforcement stays as it is. Without this you
+would have to disable enforcement first, which leaves the workspace unenforced until the
+next apply.

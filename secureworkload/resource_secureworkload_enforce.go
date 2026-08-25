@@ -33,6 +33,20 @@ func resourceSecureWorkloadEnforce() *schema.Resource {
 		Read:   resourceSecureWorkloadEnforceRead,
 		Delete: resourceSecureWorkloadEnforceDelete,
 
+		// Importer lets an already-enforcing workspace be adopted into
+		// Terraform without touching its enforcement state. Create always
+		// POSTs enable_enforce, which the API rejects with
+		// "version pN is already enforced" when that version is live, so
+		// without import there is no way to bring an existing enforced
+		// workspace under management short of disabling enforcement first.
+		//
+		// Passthrough is enough because the resource id IS the workspace id,
+		// and Read derives everything else from it:
+		//   terraform import secureworkload_enforce.example <workspace-id>
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
+
 		SchemaVersion: 2,
 		StateUpgraders: []schema.StateUpgrader{
 			{
