@@ -31,6 +31,14 @@ resource "secureworkload_port" "port1" {
     proto = 6 
 }
 ```
+To create an **ANY** service (all protocols, all ports), leave `start_port`, `end_port` and `proto` out:
+```hcl
+resource "secureworkload_port" "any" {
+	 policy_id = secureworkload_policies.policy1.id
+}
+```
+Ports cannot be combined with a wildcard protocol. If you set `start_port` and `end_port` you must also set `proto`, and if you set one port you must set both.
+
 **Note:** If creating multiple resources for ports during a single `terraform apply`, you may have to use `depends_on` to chain the resources so that terraform creates it in the same order that you intended.
 
 
@@ -40,14 +48,14 @@ resource "secureworkload_port" "port1" {
 
 ### Required
 
-- `end_port` (Number) End port of the range.
 - `policy_id` (String) ID of the needed policy.
-- `start_port` (Number) Start port of the range.
 
 ### Optional
 
 - `description` (String) (optional) Short string about this proto and port
-- `proto` (Number) Protocol Integer value (NULL means all protocols)
+- `end_port` (Number) End port of the range. Omit this, `start_port` and `proto` to create an ANY service.
+- `proto` (Number) Protocol Integer value. Required when `start_port` and `end_port` are set.
+- `start_port` (Number) Start port of the range. Omit this, `end_port` and `proto` to create an ANY service.
 - `version` (String) Indicates the version of the workspace the cluster will be added to.
 
 ### Read-Only
