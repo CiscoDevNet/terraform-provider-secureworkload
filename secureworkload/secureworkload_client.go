@@ -42,6 +42,12 @@ func IsNotFound(err error) bool {
 	return false
 }
 
+// DefaultHTTPTimeout is the default per-request HTTP client timeout used
+// when Config.HTTPTimeout is zero. It guards against requests hanging
+// indefinitely when the tenant is silently throttling (i.e. not returning
+// an explicit 429, just stalling the connection).
+const DefaultHTTPTimeout = 120 * time.Second
+
 // Configuration for creating a SecureWorkload API client
 type Config struct {
 	APIKey                 string
@@ -55,6 +61,13 @@ type Config struct {
 	// RetryMaxWait, if non-zero, overrides the maximum per-attempt wait
 	// duration used by the retry backoff.
 	RetryMaxWait time.Duration
+	// HTTPTimeout is the per-HTTP-request timeout applied to the underlying
+	// *http.Client. This bounds a single request attempt, not the whole
+	// retry sequence -- it exists specifically to prevent a stalled/
+	// silently-throttled request from hanging forever, since silent
+	// throttling never returns a response for the existing retry logic to
+	// act on. If zero, DefaultHTTPTimeout is used.
+	HTTPTimeout time.Duration
 }
 
 // A client for making signed HTTP requests to a SecureWorkload API
@@ -77,13 +90,26 @@ func New(config Config) (Client, error) {
 		Config: config,
 		signer: signer,
 	}
+
+	timeout := config.HTTPTimeout
+	if timeout <= 0 {
+		timeout = DefaultHTTPTimeout
+	}
+
+	// Always build our own *http.Transport (cloned from the default to keep
+	// sane connection-pooling/proxy behaviour) and our own *http.Client, and
+	// never reference http.DefaultClient. http.DefaultClient is a
+	// process-global shared value with no timeout; mutating it (or relying
+	// on it as-is) would either affect unrelated code in the same process
+	// or leave requests able to hang forever under silent tenant
+	// throttling.
+	transport := http.DefaultTransport.(*http.Transport).Clone()
 	if config.DisableTLSVerification {
-		transport := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-		client.client = &http.Client{Transport: transport}
-	} else {
-		client.client = http.DefaultClient
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+	client.client = &http.Client{
+		Transport: transport,
+		Timeout:   timeout,
 	}
 	return client, nil
 }

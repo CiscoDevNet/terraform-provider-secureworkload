@@ -102,12 +102,23 @@ func resourceSecureWorkloadScope() *schema.Resource {
 				Description: "What resource field to use when evaluating the scope query.",
 			},
 			"policy_priority": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				ForceNew:    false,
+				Type:     schema.TypeInt,
+				Optional: true,
+				// ForceNew: the API cannot update policy_priority in place.
+				// PUT /openapi/v1/app_scopes/{id} returns 200 but silently
+				// keeps the old value, and update_app_scope_request_body in
+				// the 4.0.1.1 schema permits only short_name, description,
+				// appliance_id, short_query and parent_app_scope_id
+				// (additionalProperties: false).
+				//
+				// Leaving this non-ForceNew makes Terraform plan an in-place
+				// update that does nothing, so the same diff is replanned on
+				// every apply forever. Verified against a live tenant:
+				// sent policy_priority=250, API still reported 200.
+				ForceNew:    true,
 				Default:     nil,
 				Computed:    true,
-				Description: "Used to sort application priorities; default is last.",
+				Description: "Used to sort application priorities; default is last. Changing this forces a new scope, because the API does not support updating it in place.",
 			},
 			"short_query": {
 				Type:     schema.TypeString,
